@@ -1,0 +1,297 @@
+name: Release Debian Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v0.1.0)'
+        required: true
+
+jobs:
+  build-deb:
+    name: Build Debian Packages
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        submodules: recursive
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          build-essential \
+          libeigen3-dev \
+          libspdlog-dev \
+          libasio-dev \
+          libmodbus-dev \
+          libevent-dev \
+          dpkg-dev
+
+    - name: Set version and system info
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        INPUT_VERSION: ${{ github.event.inputs.version }}
+        REF_NAME: ${{ github.ref_name }}
+        MATRIX_OS: ${{ matrix.os }}
+      run: |
+        # Set version
+        if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          VERSION="$INPUT_VERSION"
+        else
+          VERSION="$REF_NAME"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION_NUMBER=${VERSION#v}" >> $GITHUB_ENV
+
+        # Detect architecture
+        ARCH=$(dpkg --print-architecture)
+        echo "ARCH=$ARCH" >> $GITHUB_ENV
+
+        # Extract codename from OS version
+        case "$MATRIX_OS" in
+          ubuntu-22.04)
+            CODENAME="jammy"
+            ;;
+          ubuntu-24.04)
+            CODENAME="noble"
+            ;;
+          *)
+            CODENAME="unknown"
+            ;;
+        esac
+        echo "CODENAME=$CODENAME" >> $GITHUB_ENV
+        echo "DIST=ubuntu-${CODENAME}" >> $GITHUB_ENV
+
+        echo "Building version: $VERSION for $CODENAME ($ARCH)"
+
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release -j$(nproc)
+
+    - name: Create Debian package
+      run: |
+        cd build
+
+        # Build package with CPack
+        cpack -G DEB
+
+        # Find the generated package
+        DEB_FILE=$(find . -name "*.deb" | head -1)
+
+        if [ -z "$DEB_FILE" ] || [ ! -f "$DEB_FILE" ]; then
+          echo "Error: No .deb file generated"
+          ls -la *.deb || echo "No .deb files found"
+          exit 1
+        fi
+
+        # Rename package to include distribution and architecture
+        PACKAGE_NAME="libxmotion-mu_${{ env.VERSION_NUMBER }}_${{ env.DIST }}_${{ env.ARCH }}.deb"
+        mv "$DEB_FILE" "$PACKAGE_NAME"
+
+        echo "Successfully created: $PACKAGE_NAME"
+
+        # Show package info
+        dpkg-deb --info "$PACKAGE_NAME"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: deb-${{ env.DIST }}-${{ env.ARCH }}
+        path: build/*.deb
+        retention-days: 1
+
+  publish:
+    name: Publish to Aptly
+    needs: build-deb
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: dist
+        pattern: deb-*
+        merge-multiple: true
+
+    - name: Set version
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        INPUT_VERSION: ${{ github.event.inputs.version }}
+        REF_NAME: ${{ github.ref_name }}
+      run: |
+        if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          VERSION="$INPUT_VERSION"
+        else
+          VERSION="$REF_NAME"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION_NUMBER=${VERSION#v}" >> $GITHUB_ENV
+
+    - name: List available packages
+      run: |
+        echo "Available .deb files:"
+        find dist/ -name "*.deb" -exec ls -lh {} \;
+
+    - name: Install aptlycli
+      run: |
+        sudo apt-get update && sudo apt-get install -y curl lsb-release
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://apt.rdu.im/gpg.key | sudo tee /etc/apt/keyrings/rdu-apt.asc > /dev/null
+        echo "deb [signed-by=/etc/apt/keyrings/rdu-apt.asc] https://apt.rdu.im/$(lsb_release -cs) $(lsb_release -cs) main" |
+        sudo tee /etc/apt/sources.list.d/apt-rdu.list
+        sudo apt update
+        sudo apt install aptlycli
+        aptlycli version || echo "aptlycli installed"
+
+    - name: Publish to Aptly repositories
+      env:
+        APTLY_CLI_SERVER_URL: ${{ vars.APTLY_SERVER_URL || 'https://aptly.rdu.im' }}
+        APTLY_CLI_USERNAME: ${{ vars.APTLY_USERNAME || 'admin' }}
+        APTLY_CLI_PASSWORD: ${{ secrets.APTLY_PASSWORD }}
+        RELEASE_VERSION: ${{ env.VERSION }}
+      run: |
+        echo "Publishing packages to Aptly server: $APTLY_CLI_SERVER_URL"
+
+        # Get timestamp for snapshot naming
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+        # Dynamically discover distributions from package filenames
+        echo ""
+        echo "Discovering distributions from packages..."
+        DISTRIBUTIONS=()
+        for deb_file in dist/*.deb; do
+          if [ -f "$deb_file" ]; then
+            filename=$(basename "$deb_file")
+            # Extract distribution from filename pattern: *_ubuntu-DIST_*.deb
+            if [[ "$filename" =~ _ubuntu-([^_]+)_ ]]; then
+              dist="${BASH_REMATCH[1]}"
+              if [[ ! " ${DISTRIBUTIONS[@]} " =~ " ${dist} " ]]; then
+                DISTRIBUTIONS+=("$dist")
+                echo "  Found distribution: $dist"
+              fi
+            fi
+          fi
+        done
+
+        if [ ${#DISTRIBUTIONS[@]} -eq 0 ]; then
+          echo "Error: No packages found with recognized distribution naming"
+          exit 1
+        fi
+
+        # Process each discovered distribution
+        for dist in "${DISTRIBUTIONS[@]}"; do
+          echo ""
+          echo "========================================="
+          echo "Processing distribution: $dist"
+          echo "========================================="
+
+          # Find packages for this distribution
+          PACKAGES=$(find dist/ -name "*_ubuntu-${dist}_*.deb")
+
+          if [ -z "$PACKAGES" ]; then
+            echo "No packages found for $dist, skipping"
+            continue
+          fi
+
+          echo "Found packages for $dist:"
+          echo "$PACKAGES"
+
+          # Create upload directory name
+          UPLOAD_DIR="upload-${dist}-${TIMESTAMP}"
+
+          # Ensure repository exists
+          echo ""
+          echo "Checking if repository '$dist' exists..."
+          if ! aptlycli repo show "$dist" &>/dev/null; then
+            echo "Creating repository '$dist'"
+            aptlycli repo create "$dist" --distribution="$dist" --component="main"
+          else
+            echo "Repository '$dist' already exists"
+          fi
+
+          # Upload packages
+          echo ""
+          echo "Uploading packages to '$UPLOAD_DIR'..."
+          aptlycli file upload --dir="$UPLOAD_DIR" $PACKAGES
+
+          # Add packages to repository
+          echo ""
+          echo "Adding packages from '$UPLOAD_DIR' to repository '$dist'..."
+          aptlycli repo add "$dist" "$UPLOAD_DIR"
+
+          # Create snapshot
+          SNAPSHOT_NAME="${dist}-${TIMESTAMP}"
+          echo ""
+          echo "Creating snapshot '$SNAPSHOT_NAME'..."
+          aptlycli snapshot create "$SNAPSHOT_NAME" "$dist" \
+            --description="xmMu ${RELEASE_VERSION} for $dist"
+
+          # Publish: try update first (atomic update), fallback to fresh publish
+          echo ""
+          echo "Publishing snapshot '$SNAPSHOT_NAME'..."
+          echo "  Attempting to update existing published repository at prefix '$dist'..."
+
+          # Capture update output to check for errors
+          update_output=$(aptlycli publish update "$dist" "$SNAPSHOT_NAME:main" --prefix="$dist" 2>&1)
+          update_result=$?
+
+          if [ $update_result -eq 0 ]; then
+            echo "  Updated existing published repository '$dist' (GPG signed)"
+          else
+            # Repository doesn't exist yet, publish it for the first time
+            echo "  Repository not published yet, publishing for the first time..."
+            echo "  Using prefix: '$dist', distribution: '$dist'"
+
+            publish_output=$(aptlycli publish snapshot "$SNAPSHOT_NAME:main" \
+              --distribution="$dist" \
+              --prefix="$dist" \
+              --architectures="amd64,arm64" 2>&1)
+            publish_result=$?
+
+            if [ $publish_result -eq 0 ]; then
+              echo "  Published new snapshot '$SNAPSHOT_NAME' as '$dist' (GPG signed)"
+            else
+              echo "  Failed to publish snapshot"
+              echo ""
+              echo "  Error details:"
+              echo "$publish_output" | sed 's/^/    /'
+              exit 1
+            fi
+          fi
+
+          # Clean up upload directory
+          echo ""
+          echo "Cleaning up upload directory '$UPLOAD_DIR'..."
+          aptlycli file delete "$UPLOAD_DIR"
+
+          echo ""
+          echo "Successfully published $dist packages!"
+        done
+
+        echo ""
+        echo "========================================="
+        echo "All packages published successfully!"
+        echo "========================================="
+        echo ""
+        echo "Repository URLs for apt sources.list:"
+        for dist in "${DISTRIBUTIONS[@]}"; do
+          echo "deb $APTLY_CLI_SERVER_URL/$dist/ $dist main"
+        done
