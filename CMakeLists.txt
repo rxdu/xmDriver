@@ -86,17 +86,21 @@ endif ()
 ## Enable -fPIC for all targets
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-## Foundation dependency: xmSigma. Prefer an installed xmSigma; otherwise fall
-## back to the bundled third_party/xmSigma submodule so the project builds out of
-## the box. Either path provides the namespaced xmotion::interface /
-## xmotion::logging / xmotion::xmSigma targets (xmSigma defines them itself).
-find_package(xmSigma QUIET)
-if (NOT xmSigma_FOUND)
-  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xmSigma/CMakeLists.txt)
-    message(STATUS "xmMu: using bundled third_party/xmSigma")
-    add_subdirectory(third_party/xmSigma)
-  else ()
-    message(FATAL_ERROR "xmMu: xmSigma not found — install xmSigma or init the third_party/xmSigma submodule")
+## Foundation dependency: xmSigma. If a parent superbuild already provides it
+## in-tree (xmotion::xmSigma exists), use that and skip — this avoids adding
+## xmSigma twice when xmMu is assembled alongside it (e.g. in xmNabla or the
+## umbrella). Otherwise prefer an installed xmSigma, falling back to the bundled
+## third_party/xmSigma submodule so xmMu still builds standalone out of the box.
+## Either path provides xmotion::interface / xmotion::logging / xmotion::xmSigma.
+if (NOT TARGET xmotion::xmSigma)
+  find_package(xmSigma QUIET)
+  if (NOT xmSigma_FOUND)
+    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xmSigma/CMakeLists.txt)
+      message(STATUS "xmMu: using bundled third_party/xmSigma")
+      add_subdirectory(third_party/xmSigma)
+    else ()
+      message(FATAL_ERROR "xmMu: xmSigma not found — install xmSigma or init the third_party/xmSigma submodule")
+    endif ()
   endif ()
 endif ()
 
