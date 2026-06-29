@@ -15,7 +15,7 @@
 #include <vector>
 #include <thread>
 
-#include "interface/driver/hid_handler_interface.hpp"
+#include "xmmu/hal/hid_handler_interface.hpp"
 
 namespace xmotion {
 class HidEventListener {

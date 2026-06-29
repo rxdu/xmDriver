@@ -24,7 +24,7 @@
 #include "asio.hpp"
 #include "asio/posix/basic_stream_descriptor.hpp"
 
-#include "interface/driver/can_interface.hpp"
+#include "xmmu/hal/can_interface.hpp"
 
 namespace xmotion {
 class AsyncCAN : public std::enable_shared_from_this<AsyncCAN>,

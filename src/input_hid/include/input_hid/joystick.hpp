@@ -19,7 +19,7 @@
 #include <atomic>
 #include <mutex>
 
-#include "interface/driver/joystick_interface.hpp"
+#include "xmmu/hal/joystick_interface.hpp"
 
 namespace xmotion {
 class Joystick : public JoystickInterface {

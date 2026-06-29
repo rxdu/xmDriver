@@ -12,8 +12,8 @@
 
 #include <memory>
 
-#include "interface/driver/serial_interface.hpp"
-#include "interface/driver/imu_interface.hpp"
+#include "xmmu/hal/serial_interface.hpp"
+#include "xmmu/hal/imu_interface.hpp"
 
 namespace xmotion {
 class ImuHipnuc : public ImuInterface {

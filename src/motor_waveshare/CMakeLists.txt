@@ -9,7 +9,7 @@ add_library(motor_waveshare STATIC
     src/servo/SMS_STS.cpp
     src/servo/SCS.cpp
     src/servo/SCSerial.cpp)
-target_link_libraries(motor_waveshare PUBLIC xmotion::interface xmotion::logging async_port)
+target_link_libraries(motor_waveshare PUBLIC xmotion::hal xmotion::xmSigma async_port)
 if (AKELC_WITH_MODBUS)
   target_compile_definitions(motor_waveshare PRIVATE AKELC_WITH_MODBUS)
 endif ()

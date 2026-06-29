@@ -11,8 +11,8 @@
 
 #include <string>
 
-#include "interface/driver/hid_handler_interface.hpp"
-#include "interface/driver/joystick_interface.hpp"
+#include "xmmu/hal/hid_handler_interface.hpp"
+#include "xmmu/hal/joystick_interface.hpp"
 
 namespace xmotion {
 class JoystickHandler : public HidInputInterface {

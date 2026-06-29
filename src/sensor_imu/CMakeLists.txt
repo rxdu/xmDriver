@@ -3,7 +3,7 @@ find_package(Threads REQUIRED)
 add_library(sensor_imu STATIC
         src/ch_serial.c
         src/imu_hipnuc.cpp)
-target_link_libraries(sensor_imu PUBLIC xmotion::interface async_port Threads::Threads)
+target_link_libraries(sensor_imu PUBLIC xmotion::hal async_port Threads::Threads)
 target_compile_definitions(sensor_imu PUBLIC ASIO_ENABLE_OLD_SERVICES)
 target_compile_options(sensor_imu PUBLIC -fPIC)
 target_include_directories(sensor_imu PUBLIC

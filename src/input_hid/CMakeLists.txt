@@ -12,7 +12,7 @@ add_library(input_hid STATIC
     src/keyboard_handler.cpp
     src/keyboard_mapping.cpp
 )
-target_link_libraries(input_hid PUBLIC xmotion::interface xmotion::logging Threads::Threads PkgConfig::Libevent)
+target_link_libraries(input_hid PUBLIC xmotion::hal xmotion::xmSigma Threads::Threads PkgConfig::Libevent)
 target_compile_definitions(input_hid PUBLIC ASIO_ENABLE_OLD_SERVICES)
 target_compile_options(input_hid PUBLIC -fPIC)
 target_include_directories(input_hid PUBLIC

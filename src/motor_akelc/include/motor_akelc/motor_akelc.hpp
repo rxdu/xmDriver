@@ -9,7 +9,7 @@
 #ifndef XMOTION_SRC_DRIVER_MODBUS_RTU_INCLUDE_MODBUS_RTU_MOTOR_AKELC_HPP_
 #define XMOTION_SRC_DRIVER_MODBUS_RTU_INCLUDE_MODBUS_RTU_MOTOR_AKELC_HPP_
 
-#include "interface/driver/motor_controller_interface.hpp"
+#include "xmmu/hal/motor_controller_interface.hpp"
 #include "motor_akelc/motor_akelc_interface.hpp"
 
 #ifdef AKELC_WITH_MODBUS

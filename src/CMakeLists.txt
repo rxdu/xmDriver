@@ -1,6 +1,11 @@
 # Host hardware driver modules. Build order follows inter-module dependencies:
 # async_port and modbus_rtu provide transport layers consumed by the motor,
 # sensor and input drivers.
+#
+# hal is the header-only hardware abstraction layer (driver interfaces) that the
+# driver modules implement, so it must be added before them.
+add_subdirectory(hal)
+
 add_subdirectory(async_port)
 add_subdirectory(modbus_rtu)
 
@@ -17,6 +22,7 @@ add_subdirectory(input_sbus)
 ## in every host hardware driver module.
 add_library(xmMu INTERFACE)
 target_link_libraries(xmMu INTERFACE
+    hal
     async_port
     modbus_rtu
     motor_akelc

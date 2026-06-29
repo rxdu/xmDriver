@@ -4,7 +4,7 @@ pkg_check_modules(LIBMODBUS QUIET IMPORTED_TARGET libmodbus)
 if (LIBMODBUS_FOUND)
     add_library(modbus_rtu STATIC
         src/modbus_rtu_port.cpp)
-    target_link_libraries(modbus_rtu PUBLIC xmotion::interface xmotion::logging PkgConfig::LIBMODBUS)
+    target_link_libraries(modbus_rtu PUBLIC xmotion::hal xmotion::xmSigma PkgConfig::LIBMODBUS)
     target_include_directories(modbus_rtu PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:include>
