@@ -12,7 +12,7 @@
 #include <memory>
 #include <functional>
 
-#include "interface/driver/rc_receiver_interface.hpp"
+#include "xmmu/hal/rc_receiver_interface.hpp"
 #include "input_sbus/sbus_decoder.hpp"
 
 namespace xmotion {

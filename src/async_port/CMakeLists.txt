@@ -3,7 +3,7 @@ find_package(Threads REQUIRED)
 add_library(async_port STATIC
         src/async_serial.cpp
         src/async_can.cpp)
-target_link_libraries(async_port PUBLIC xmotion::interface Threads::Threads)
+target_link_libraries(async_port PUBLIC xmotion::hal Threads::Threads)
 target_compile_definitions(async_port PUBLIC ASIO_ENABLE_OLD_SERVICES)
 target_compile_options(async_port PUBLIC -fPIC)
 target_include_directories(async_port PUBLIC

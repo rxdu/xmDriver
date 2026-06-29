@@ -11,8 +11,8 @@
 
 #include <string>
 
-#include "interface/driver/hid_handler_interface.hpp"
-#include "interface/driver/keyboard_interface.hpp"
+#include "xmmu/hal/hid_handler_interface.hpp"
+#include "xmmu/hal/keyboard_interface.hpp"
 #include "input_hid/details/keyboard_mapping.hpp"
 
 namespace xmotion {

@@ -14,7 +14,7 @@ if (AKELC_WITH_MODBUS OR AKELC_WITH_CANOPEN)
   add_library(motor_akelc STATIC
       src/motor_akelc.cpp
       ${AKELC_MODBUS_IMPL})
-  target_link_libraries(motor_akelc PUBLIC xmotion::interface xmotion::logging ${AKELC_MODBUS_LIB})
+  target_link_libraries(motor_akelc PUBLIC xmotion::hal xmotion::xmSigma ${AKELC_MODBUS_LIB})
   if (AKELC_WITH_MODBUS)
     target_compile_definitions(motor_akelc PRIVATE AKELC_WITH_MODBUS)
   endif ()

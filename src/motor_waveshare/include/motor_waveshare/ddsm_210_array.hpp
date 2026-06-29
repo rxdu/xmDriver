@@ -11,8 +11,8 @@
 
 #include <memory>
 
-#include "interface/driver/serial_interface.hpp"
-#include "interface/driver/motor_controller_array_interface.hpp"
+#include "xmmu/hal/serial_interface.hpp"
+#include "xmmu/hal/motor_controller_array_interface.hpp"
 #include "motor_waveshare/ddsm_210.hpp"
 
 namespace xmotion {

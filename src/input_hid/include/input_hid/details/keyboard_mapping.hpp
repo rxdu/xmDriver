@@ -12,7 +12,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "interface/driver/keyboard_interface.hpp"
+#include "xmmu/hal/keyboard_interface.hpp"
 
 namespace xmotion {
 struct KeyboardMapping {

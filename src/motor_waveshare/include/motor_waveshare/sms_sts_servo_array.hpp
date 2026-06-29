@@ -19,7 +19,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "interface/driver/motor_controller_array_interface.hpp"
+#include "xmmu/hal/motor_controller_array_interface.hpp"
 #include "motor_waveshare/sms_sts_servo.hpp"
 
 namespace xmotion {

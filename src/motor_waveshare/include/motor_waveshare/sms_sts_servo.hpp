@@ -15,7 +15,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include "interface/driver/motor_controller_interface.hpp"
+#include "xmmu/hal/motor_controller_interface.hpp"
 
 namespace xmotion {
 class SmsStsServo : public MotorControllerInterface {
