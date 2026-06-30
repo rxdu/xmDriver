@@ -3,7 +3,8 @@ find_package(Threads REQUIRED)
 add_library(motor_vesc STATIC
         src/vesc_can_interface.cpp
         src/vesc_status_packet.cpp
-        src/vesc_cmd_packet.cpp)
+        src/vesc_cmd_packet.cpp
+        src/vesc_motor.cpp)
 target_link_libraries(motor_vesc PUBLIC xmotion::hal async_port Threads::Threads)
 target_compile_definitions(motor_vesc PUBLIC ASIO_ENABLE_OLD_SERVICES)
 target_compile_options(motor_vesc PUBLIC -fPIC)

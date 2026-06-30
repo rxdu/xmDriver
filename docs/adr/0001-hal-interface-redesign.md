@@ -92,8 +92,8 @@ The legacy `vesc_can_interface` bugs found in the code review (unclamped RPM, `0
 
 ## Migration plan (incremental, CI-verified)
 
-1. **Reference stage (this ADR):** land the `xmotion::hal` interface layer + the `SimMotorController` reference impl + tests, additive and non-breaking. ✅
-2. Migrate the VESC driver to `VescMotor` behind the factory; keep `vesc_can_interface` until consumers move.
+1. **Reference stage:** land the `xmotion::hal` interface layer + the `SimMotorController` reference impl + tests, additive and non-breaking. ✅
+2. Migrate the VESC driver to `VescMotor` behind the factory (`"vesc"`); keep `vesc_can_interface` until consumers move. The unclamped-RPM, `0`-on-error, and no-failsafe-on-disconnect defects from the code review are fixed by construction in `VescMotor`. ✅
 3. Provide a `LegacyMotorAdapter` (`MotorControllerInterface` ⇄ `hal::Motor`) so xmNabla compiles unchanged while it migrates.
 4. Migrate AKELC, Waveshare, then the sensor/RC/HID families on the same template.
 5. Move `serial`/`can`/`modbus` interfaces into `xmmu::transport`, out of the app-facing HAL.
