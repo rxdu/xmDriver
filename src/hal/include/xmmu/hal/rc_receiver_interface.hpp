@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include "xmotion/types/base_types.hpp"
+#include "xmsigma/types/base_types.hpp"
 
 #include <array>
 

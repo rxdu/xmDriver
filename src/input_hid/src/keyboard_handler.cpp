@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <linux/input.h>
 
-#include "logging/xlogger.hpp"
+#include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
 KeyboardHandler::KeyboardHandler(const std::string &input_event)
