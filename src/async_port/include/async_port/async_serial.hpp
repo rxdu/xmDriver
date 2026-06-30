@@ -85,6 +85,9 @@ class AsyncSerial : public std::enable_shared_from_this<AsyncSerial>,
   void DefaultReceiveCallback(uint8_t *data, const size_t bufsize, size_t len);
   void ReadFromPort();
   void WriteToPort(bool check_if_busy);
+  // Non-joining teardown for use from io-thread completion handlers (Close()
+  // joins and must only be called from the owning thread).
+  void HandleError();
 };
 }  // namespace xmotion
 

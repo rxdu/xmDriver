@@ -10,7 +10,8 @@ mark_as_advanced(
 
 # add unit tests
 add_executable(utest_async_port
-    utest_ring_buffer.cpp)
+    utest_ring_buffer.cpp
+    utest_async_lifecycle.cpp)
 target_link_libraries(utest_async_port PRIVATE gtest gmock gtest_main async_port)
 # get_target_property(PRIVATE_HEADERS imview INCLUDE_DIRECTORIES)
 target_include_directories(utest_async_port PRIVATE ${PRIVATE_HEADERS})

@@ -82,14 +82,31 @@ bool AsyncCAN::Open() {
 }
 
 void AsyncCAN::Close() {
+  // External / destructor teardown: safe to join here (called from the owning
+  // thread, never from a completion handler — those use HandleError()).
   io_context_.stop();
   if (io_thread_.joinable()) io_thread_.join();
   io_context_.reset();
-  
-  // release port fd
-  const int close_result = ::close(can_fd_);
-  can_fd_ = -1;
 
+  HandleError();  // close the socket / mark closed (idempotent)
+}
+
+void AsyncCAN::HandleError() {
+  // Runs ON the io thread when invoked from a completion handler. Close the
+  // socket and stop, but NEVER join the io thread from within itself — calling
+  // Close() here was a self-join (terminate) on any CAN error (bus-off, iface
+  // down). With the read loop not re-armed, the io_context drains and the io
+  // thread exits; Close()/dtor then joins it.
+  std::error_code ec;
+  if (socketcan_stream_.is_open()) {
+    // asio owns the fd after assign() — let it close (avoids a double close).
+    socketcan_stream_.cancel(ec);
+    socketcan_stream_.close(ec);
+  } else if (can_fd_ >= 0) {
+    // Open() failed before assign() — the raw fd is ours to close.
+    ::close(can_fd_);
+  }
+  can_fd_ = -1;
   port_opened_ = false;
 }
 
@@ -109,7 +126,7 @@ void AsyncCAN::ReadFromPort(struct can_frame &rec_frame,
       asio::buffer(&rec_frame, sizeof(rec_frame)),
       [sthis](asio::error_code error, size_t bytes_transferred) {
         if (error) {
-          sthis->Close();
+          sthis->HandleError();
           return;
         }
 
@@ -124,13 +141,42 @@ void AsyncCAN::ReadFromPort(struct can_frame &rec_frame,
 }
 
 void AsyncCAN::SendFrame(const struct can_frame &frame) {
+  if (!port_opened_.load()) {
+    std::cerr << "Failed to send, CAN port closed" << std::endl;
+    return;
+  }
+  // Copy the frame and hand it to the io thread. This fixes two bugs in the old
+  // direct async_write_some(&frame): (1) `frame` is the caller's object, which
+  // the async write would reference after this returns -> use-after-free /
+  // garbage on the bus; (2) issuing the write from the caller thread raced the
+  // io thread's read on the same descriptor (asio requires serialized ops).
+  auto sthis = shared_from_this();
+  asio::post(io_context_, [sthis, frame]() {
+    sthis->tx_queue_.push_back(frame);
+    sthis->StartWrite();
+  });
+}
+
+void AsyncCAN::StartWrite() {
+  // io-thread only. One write in flight at a time; tx_frame_ owns the bytes for
+  // the duration of the async write.
+  if (tx_in_progress_ || tx_queue_.empty()) return;
+  tx_in_progress_ = true;
+  tx_frame_ = tx_queue_.front();
+  tx_queue_.pop_front();
+
+  auto sthis = shared_from_this();
   socketcan_stream_.async_write_some(
-      asio::buffer(&frame, sizeof(frame)),
-      [](asio::error_code error, size_t bytes_transferred) {
+      asio::buffer(&tx_frame_, sizeof(tx_frame_)),
+      [sthis](asio::error_code error, size_t /*bytes_transferred*/) {
+        sthis->tx_in_progress_ = false;
         if (error) {
-          std::cerr << "Failed to send CAN frame" << std::endl;
+          std::cerr << "Failed to send CAN frame: " << error.message()
+                    << std::endl;
+          sthis->HandleError();
+          return;
         }
-        // std::cout << "frame sent" << std::endl;
+        sthis->StartWrite();  // drain the next queued frame, in order
       });
 }
 

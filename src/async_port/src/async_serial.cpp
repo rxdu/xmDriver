@@ -122,15 +122,30 @@ bool AsyncSerial::Open() {
 }
 
 void AsyncSerial::Close() {
+  // External / destructor teardown: safe to join here because Close() is called
+  // from the owning thread, never from a completion handler (those use
+  // HandleError(), which does not join — see below).
   io_context_.stop();
   if (io_thread_.joinable()) io_thread_.join();
   io_context_.reset();
 
-  if (IsOpened()) {
-    serial_port_.cancel();
-    serial_port_.close();
-  }
+  std::error_code ec;
+  serial_port_.cancel(ec);
+  serial_port_.close(ec);
 
+  port_opened_ = false;
+}
+
+void AsyncSerial::HandleError() {
+  // Runs ON the io thread, from a completion handler. Tear the port down but
+  // NEVER join the io thread from within itself — calling Close() here was a
+  // self-join (std::system_error / terminate) on any device error, e.g. a
+  // USB-serial unplug. With the read loop not re-armed and the port closed, the
+  // io_context runs out of work and the io thread exits on its own; a later
+  // Close()/destructor then joins it cleanly.
+  std::error_code ec;
+  serial_port_.cancel(ec);
+  serial_port_.close(ec);
   port_opened_ = false;
 }
 
@@ -145,7 +160,7 @@ void AsyncSerial::ReadFromPort() {
       asio::buffer(rx_buf_),
       [sthis](asio::error_code error, size_t bytes_transferred) {
         if (error) {
-          sthis->Close();
+          sthis->HandleError();
           return;
         }
 
@@ -176,7 +191,7 @@ void AsyncSerial::WriteToPort(bool check_if_busy) {
       asio::buffer(tx_buf_, len),
       [sthis](asio::error_code error, size_t bytes_transferred) {
         if (error) {
-          sthis->Close();
+          sthis->HandleError();
           return;
         }
         std::lock_guard<std::recursive_mutex> lock(sthis->tx_mutex_);
