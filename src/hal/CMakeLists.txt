@@ -4,5 +4,10 @@ target_include_directories(hal INTERFACE
     $<INSTALL_INTERFACE:include>)
 target_link_libraries(hal INTERFACE xmotion::xmSigma)   # for xmotion/types/*
 add_library(xmotion::hal ALIAS hal)
+
+if (BUILD_TESTS)
+  add_subdirectory(test)
+endif ()
+
 install(TARGETS hal EXPORT xmMuTargets)
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
