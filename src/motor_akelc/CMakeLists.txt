@@ -8,39 +8,18 @@ endif ()
 if (AKELC_WITH_MODBUS)
   set(AKELC_MODBUS_IMPL src/motor_akelc_modbus.cpp)
   set(AKELC_MODBUS_LIB modbus_rtu)
+  set(AKELC_MODBUS_DEF AKELC_WITH_MODBUS)
 endif ()
 
 if (AKELC_WITH_MODBUS OR AKELC_WITH_CANOPEN)
-  add_library(motor_akelc STATIC
-      src/motor_akelc.cpp
-      ${AKELC_MODBUS_IMPL})
-  target_link_libraries(motor_akelc PUBLIC xmotion::hal xmotion::xmSigma ${AKELC_MODBUS_LIB})
-  if (AKELC_WITH_MODBUS)
-    target_compile_definitions(motor_akelc PRIVATE AKELC_WITH_MODBUS)
-  endif ()
-  target_include_directories(motor_akelc PUBLIC
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include>
-      PRIVATE src)
+  xmmu_add_module(motor_akelc
+      SOURCES src/motor_akelc.cpp ${AKELC_MODBUS_IMPL}
+      PUBLIC_DEPS xmotion::hal xmotion::xmSigma ${AKELC_MODBUS_LIB}
+      PRIVATE_DEFINITIONS ${AKELC_MODBUS_DEF})
 
   if (BUILD_APPS)
     add_subdirectory(app)
   endif ()
-
-  if (BUILD_TESTS)
-    add_subdirectory(test)
-  endif ()
-
-  ## installation configuration
-  install(TARGETS motor_akelc
-      EXPORT xmMuTargets
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib
-      RUNTIME DESTINATION bin
-      INCLUDES DESTINATION include)
-
-  install(DIRECTORY include/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 else ()
   message(FATAL_ERROR "libmodbus not found, please install with: sudo apt-get install libmodbus-dev")
 endif ()

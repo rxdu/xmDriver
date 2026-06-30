@@ -107,6 +107,9 @@ endif ()
 ## Dependent libraries (googletest for tests, rpi_sbus for input_sbus)
 add_subdirectory(third_party)
 
+## Per-module CMake helpers (xmmu_add_module / xmmu_add_group)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/xmmu_module.cmake)
+
 ## Add source directories
 add_subdirectory(src)
 
