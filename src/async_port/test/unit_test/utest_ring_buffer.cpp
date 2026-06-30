@@ -175,3 +175,66 @@ TEST_F(RingBufferTest, HandlesWrapAround) {
     EXPECT_EQ(buffer_with_overwrite.GetFreeSize(), 7);
   }
 }
+
+// --- regression tests for the hardening fixes -------------------------------
+
+// Overwrite must keep occupancy / empty / full accounting correct across many
+// laps. Previously read_index_ was masked on overwrite while write_index_ ran
+// free, corrupting the difference math after the first overwrite.
+TEST(RingBufferHardeningTest, OverwriteKeepsAccountingCorrect) {
+  RingBuffer<int, 4> rb(true);  // 3 usable slots
+  for (int i = 0; i < 100; ++i) rb.Write(i);
+  EXPECT_EQ(rb.GetOccupiedSize(), 3u);
+  EXPECT_EQ(rb.GetFreeSize(), 0u);
+  EXPECT_TRUE(rb.IsFull());
+  EXPECT_FALSE(rb.IsEmpty());
+  int v;
+  EXPECT_EQ(rb.Read(v), 1u);
+  EXPECT_EQ(v, 97);  // three newest survive, FIFO
+  EXPECT_EQ(rb.Read(v), 1u);
+  EXPECT_EQ(v, 98);
+  EXPECT_EQ(rb.Read(v), 1u);
+  EXPECT_EQ(v, 99);
+  EXPECT_TRUE(rb.IsEmpty());
+}
+
+// PeekAt: operator-precedence fix — an index at/beyond availability returns 0.
+TEST(RingBufferHardeningTest, PeekAtRejectsOutOfRangeIndex) {
+  RingBuffer<int, 8> rb(false);
+  rb.Write(10);
+  rb.Write(20);
+  int v;
+  EXPECT_EQ(rb.PeekAt(v, 0), 1u);
+  EXPECT_EQ(v, 10);
+  EXPECT_EQ(rb.PeekAt(v, 1), 1u);
+  EXPECT_EQ(v, 20);
+  EXPECT_EQ(rb.PeekAt(v, 2), 0u);   // exactly at availability
+  EXPECT_EQ(rb.PeekAt(v, 99), 0u);  // far beyond
+}
+
+// Peek clamps to the caller's buffer (no OOB) and to availability; it does not
+// consume.
+TEST(RingBufferHardeningTest, PeekClampsAndDoesNotConsume) {
+  RingBuffer<int, 8> rb(false);
+  for (int i = 0; i < 5; ++i) rb.Write(i);
+
+  std::vector<int> small(2);
+  EXPECT_EQ(rb.Peek(small, 100), 2u);  // clamped to data.size()
+  EXPECT_EQ(small[0], 0);
+  EXPECT_EQ(small[1], 1);
+
+  std::vector<int> big(10);
+  EXPECT_EQ(rb.Peek(big, 10), 5u);  // clamped to availability
+  EXPECT_EQ(rb.GetOccupiedSize(), 5u);  // peek did not consume
+}
+
+// Read clamps btr to the caller's buffer size (was assert -> OOB in release).
+TEST(RingBufferHardeningTest, ReadClampsToCallerBuffer) {
+  RingBuffer<int, 8> rb(false);
+  for (int i = 0; i < 5; ++i) rb.Write(i);
+  std::vector<int> out(3);
+  EXPECT_EQ(rb.Read(out, 100), 3u);  // clamped
+  EXPECT_EQ(out[0], 0);
+  EXPECT_EQ(out[2], 2);
+  EXPECT_EQ(rb.GetOccupiedSize(), 2u);
+}

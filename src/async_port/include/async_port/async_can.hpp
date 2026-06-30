@@ -4,9 +4,10 @@
  * Created on: Sep 10, 2020 13:22
  * Description:
  *
- * Note: CAN TX is not buffered and only the latest frame will be transmitted.
- *  Buffered transmission will need to be added if a message has to be divided
- *  into multiple frames and in applications where no frame should be dropped.
+ * Note: CAN TX is queued and serialized on the io thread — frames are sent in
+ *  order, one async write in flight at a time. SendFrame() copies the frame, so
+ *  the caller need not keep it alive, and all socket operations run on the io
+ *  thread (no cross-thread use of the descriptor).
  *
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
@@ -17,6 +18,7 @@
 #include <linux/can.h>
 
 #include <atomic>
+#include <deque>
 #include <memory>
 #include <thread>
 #include <functional>
@@ -67,9 +69,16 @@ class AsyncCAN : public std::enable_shared_from_this<AsyncCAN>,
   struct can_frame rcv_frame_;
   ReceiveCallback rcv_cb_ = nullptr;
 
+  // TX queue — all accessed only on the io thread (SendFrame posts onto it).
+  std::deque<struct can_frame> tx_queue_;
+  struct can_frame tx_frame_;  // the in-flight frame, kept alive for the write
+  bool tx_in_progress_ = false;
+
   void DefaultReceiveCallback(can_frame *rx_frame);
   void ReadFromPort(struct can_frame &rec_frame,
                     asio::posix::basic_stream_descriptor<> &stream);
+  void StartWrite();   // io-thread only: kick the next queued write
+  void HandleError();  // io-thread-safe teardown (does not join)
 };
 }  // namespace xmotion
 

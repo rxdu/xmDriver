@@ -60,6 +60,7 @@
 #include <cstddef>
 #include <cassert>
 
+#include <algorithm>
 #include <mutex>
 #include <array>
 #include <vector>
@@ -117,8 +118,10 @@ class RingBuffer {
   // Read/Write functions
   // burst read/write functions
   std::size_t Read(std::vector<T>& data, std::size_t btr) {
-    assert(data.size() >= btr);
     std::lock_guard<std::mutex> lock(buffer_mutex_);
+    // Clamp to the caller's buffer so a too-small `data` can never overflow
+    // (the old assert was compiled out under NDEBUG -> OOB write in release).
+    if (btr > data.size()) btr = data.size();
     // duplicated the read logic to avoid locking multiple times
     for (std::size_t i = 0; i < btr; ++i) {
       if (read_index_ == write_index_) return i;
@@ -127,26 +130,31 @@ class RingBuffer {
     return btr;
   }
 
+  // Copy up to btp not-yet-read elements without consuming them. Atomic: the
+  // whole peek happens under a single lock, so it cannot tear against a
+  // concurrent Write (the old per-element PeekAt locked once per byte).
   std::size_t Peek(std::vector<T>& data, std::size_t btp) const {
-    assert(data.size() >= btp);
-    std::size_t count = 0;
-    for (std::size_t i = 0; i < btp; ++i) {
-      if (PeekAt(data[i], i) == 0) return i;
-      count++;
-    }
-    return count;
+    std::lock_guard<std::mutex> lock(buffer_mutex_);
+    const std::size_t available = (write_index_ - read_index_) & size_mask_;
+    const std::size_t n = std::min({btp, data.size(), available});
+    for (std::size_t i = 0; i < n; ++i)
+      data[i] = buffer_[(read_index_ + i) & size_mask_];
+    return n;
   }
 
   std::size_t Write(const std::vector<T>& new_data, std::size_t btw) {
-    assert(new_data.size() >= btw);
     std::lock_guard<std::mutex> lock(buffer_mutex_);
+    if (btw > new_data.size()) btw = new_data.size();  // never read OOB
     // duplicated the write logic to avoid locking multiple times
     for (std::size_t i = 0; i < btw; ++i) {
       if (((write_index_ + 1) & size_mask_) == (read_index_ & size_mask_)) {
         // return 0 if buffer is full and overwrite is disabled
         if (!enable_overwrite_) return i;
-        // otherwise, advance the read_index to overwrite old data
-        read_index_ = (read_index_ + 1) & size_mask_;
+        // otherwise, advance the read_index to overwrite old data. Keep it
+        // free-running (mask only on access) so occupancy math stays correct;
+        // masking it here while write_index_ free-runs corrupted the size /
+        // empty / full accounting after the first overwrite.
+        ++read_index_;
       }
       buffer_[(write_index_++) & size_mask_] = new_data[i];
     }
@@ -163,8 +171,10 @@ class RingBuffer {
 
   std::size_t PeekAt(T& data, size_t n) const {
     std::lock_guard<std::mutex> lock(buffer_mutex_);
-    // return 0 if requested data is beyond the available range
-    if (n >= (write_index_ - read_index_) & size_mask_) return 0;
+    // return 0 if requested data is beyond the available range. Parenthesize:
+    // `>=` binds tighter than `&`, so the old `n >= (w - r) & mask` compared the
+    // raw (unmasked) difference and ANDed the bool with the mask.
+    if (n >= ((write_index_ - read_index_) & size_mask_)) return 0;
     data = buffer_[(read_index_ + n) & size_mask_];
     return 1;
   }
@@ -175,8 +185,9 @@ class RingBuffer {
     if (((write_index_ + 1) & size_mask_) == (read_index_ & size_mask_)) {
       // return 0 if buffer is full and overwrite is disabled
       if (!enable_overwrite_) return 0;
-      // otherwise, advance the read_index to overwrite old data
-      read_index_ = (read_index_ + 1) & size_mask_;
+      // otherwise, advance the read_index to overwrite old data (free-running;
+      // mask only on access — see the burst Write above).
+      ++read_index_;
     }
 
     buffer_[(write_index_++) & size_mask_] = new_data;
