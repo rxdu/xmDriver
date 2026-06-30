@@ -12,7 +12,7 @@
 
 #include "SCServo.h"
 
-#include "logging/xlogger.hpp"
+#include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
 class SmsStsServo::Impl {

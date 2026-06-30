@@ -9,7 +9,7 @@
 
 #include "modbus_rtu/modbus_rtu_port.hpp"
 
-#include "logging/xlogger.hpp"
+#include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
 ModbusRtuPort::ModbusRtuPort() {}

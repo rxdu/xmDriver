@@ -13,7 +13,7 @@
 
 #include "input_hid/hid_event_listener.hpp"
 
-#include "logging/xlogger.hpp"
+#include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
 namespace {

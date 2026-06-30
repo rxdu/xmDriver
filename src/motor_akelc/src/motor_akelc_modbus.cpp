@@ -9,7 +9,7 @@
 
 #include "motor_akelc/motor_akelc_modbus.hpp"
 
-#include "logging/xlogger.hpp"
+#include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
 namespace {
