@@ -2,85 +2,80 @@
  * hid_event_listener.cpp
  *
  * Created on 7/15/24 9:19 PM
- * Description:
+ * Description: epoll-based HID fd-readiness reactor (replaces the libevent
+ *   implementation — one fewer event-loop dependency; see ADR 0002).
  *
- * Copyright (c) 2024 Ruixiang Du (rdu)
+ * Copyright (c) 2024-2026 Ruixiang Du (rdu)
  */
 
-#include <stdexcept>
-
-#include <linux/input.h>
-
 #include "input_hid/hid_event_listener.hpp"
+
+#include <sys/epoll.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <stdexcept>
 
 #include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
 namespace {
-void OnWakeupEvent(evutil_socket_t fd, short events, void *arg) {
-  // No-op event; just wakes up the loop
-}
+constexpr int kMaxEvents = 16;
+constexpr int kPollTimeoutMs = 1000;  // bounds shutdown latency
 }  // namespace
 
 HidEventListener::HidEventListener() {
-  base_ = event_base_new();
-  if (base_ == nullptr) {
-    throw std::runtime_error("HidEventListener: failed to create event base");
-  }
-
-  struct event *wakeup =
-      event_new(base_, -1, EV_PERSIST, OnWakeupEvent, nullptr);
-  struct timeval tv = {1, 0};  // Wake up every second
-  if (wakeup) {
-    event_add(wakeup, &tv);
+  epoll_fd_ = epoll_create1(0);
+  if (epoll_fd_ < 0) {
+    throw std::runtime_error("HidEventListener: failed to create epoll fd");
   }
 }
 
 HidEventListener::~HidEventListener() {
-  if (base_) {
-    event_base_loopbreak(base_);
-    if (event_thread_.joinable()) {
-      event_thread_.join();
-    }
-    for (auto event : hid_events_) {
-      event_free(event);
-    }
-    event_base_free(base_);
+  running_ = false;
+  if (event_thread_.joinable()) event_thread_.join();
+  if (epoll_fd_ >= 0) {
+    close(epoll_fd_);
+    epoll_fd_ = -1;
   }
 }
 
-void HidEventListener::EventCallback(evutil_socket_t fd, short events,
-                                     void *arg) {
-  HidInputInterface *handler = static_cast<HidInputInterface *>(arg);
-  handler->OnInputEvent();
-}
-
-bool HidEventListener::AddHidHandler(HidInputInterface *handler) {
-  auto fd = handler->GetFd();
+bool HidEventListener::AddHidHandler(HidInputInterface* handler) {
+  const int fd = handler->GetFd();
   if (fd < 0) {
     XLOG_ERROR("HidEventListener: invalid file descriptor");
     return false;
   }
-  struct event *hid_event =
-      event_new(base_, fd, EV_READ | EV_PERSIST, EventCallback, handler);
-  if (!hid_event) {
-    XLOG_ERROR("HidEventListener: failed to create event");
+  // epoll_ctl is safe to call while another thread is in epoll_wait, so handlers
+  // may be added before or after StartListening(). The handler pointer rides in
+  // the event data for O(1) dispatch (ownership stays with the caller).
+  struct epoll_event ev {};
+  ev.events = EPOLLIN;
+  ev.data.ptr = handler;
+  if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &ev) < 0) {
+    XLOG_ERROR("HidEventListener: epoll_ctl ADD failed for fd {}", fd);
     return false;
   }
-
-  if (event_add(hid_event, NULL) < 0) {
-    XLOG_ERROR("HidEventListener: failed to add event");
-    event_free(hid_event);
-    return false;
-  }
-  hid_events_.push_back(hid_event);
-
+  handlers_.push_back(handler);
   return true;
 }
 
 void HidEventListener::StartListening() {
+  if (running_.exchange(true)) return;  // already listening
   event_thread_ = std::thread([this]() {
-    if (base_) event_base_dispatch(base_);
+    struct epoll_event events[kMaxEvents];
+    while (running_.load()) {
+      const int n = epoll_wait(epoll_fd_, events, kMaxEvents, kPollTimeoutMs);
+      if (n < 0) {
+        if (errno == EINTR) continue;  // interrupted syscall -> retry
+        XLOG_ERROR("HidEventListener: epoll_wait failed, errno {}", errno);
+        break;
+      }
+      for (int i = 0; i < n; ++i) {
+        auto* handler = static_cast<HidInputInterface*>(events[i].data.ptr);
+        if (handler) handler->OnInputEvent();
+      }
+    }
   });
 }
 }  // namespace xmotion

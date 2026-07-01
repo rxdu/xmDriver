@@ -9,15 +9,16 @@
 #ifndef XMOTION_HID_EVENT_LISTENER_HPP
 #define XMOTION_HID_EVENT_LISTENER_HPP
 
-#include <event2/event.h>
-
-#include <memory>
-#include <vector>
+#include <atomic>
 #include <thread>
+#include <vector>
 
 #include "xmmu/hal/hid_handler_interface.hpp"
 
 namespace xmotion {
+// Watches the registered HID device fds for readiness and dispatches to each
+// handler's OnInputEvent(). Backed by a POSIX epoll reactor — no external
+// event-loop library (was libevent).
 class HidEventListener {
  public:
   HidEventListener();
@@ -32,11 +33,9 @@ class HidEventListener {
   void StartListening();
 
  private:
-  static void EventCallback(evutil_socket_t fd, short events, void* arg);
-  struct event_base* base_;
-  std::vector<HidInputInterface*> handlers_;
-  std::vector<struct event*> hid_events_;
-
+  int epoll_fd_ = -1;
+  std::atomic<bool> running_{false};
+  std::vector<HidInputInterface*> handlers_;  // ownership stays with the caller
   std::thread event_thread_;
 };
 }  // namespace xmotion
