@@ -91,7 +91,7 @@ void VescCanInterface::HandleCanFrame(const struct can_frame *frame) {
 
     // Only stamp the state when a frame was actually consumed — don't advance
     // the timestamp (or publish below) for an unmatched/foreign id.
-    if (updated) stamped_state_.time = VescClock::now();
+    if (updated) stamped_state_.time = Now();  // xmsigma/types/time.hpp
   }
 
   if (updated && state_updated_callback_) {

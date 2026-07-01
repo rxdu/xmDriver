@@ -11,11 +11,14 @@
 #define ROBOSW_SRC_DRIVER_INCLUDE_VESC_DRIVER_VESC_STATE_HPP
 
 #include <cstdint>
-#include <chrono>
+
+#include "xmsigma/types/time.hpp"
 
 namespace xmotion {
-using VescClock = std::chrono::steady_clock;
-using VescTimepoint = VescClock::time_point;
+// Deprecated: use the shared xmotion time vocabulary (xmsigma/types/time.hpp).
+// Kept as aliases for source compatibility.
+using VescClock = Clock;
+using VescTimepoint = Timestamp;
 
 enum VescFaultCode {
   kFaultCodeNone = 0,
@@ -52,7 +55,7 @@ enum class VescStateUpdatedField {
 };
 
 struct StampedVescState {
-  VescTimepoint time;
+  Timestamp time;  // host monotonic receive time (xmsigma/types/time.hpp)
   VescStateUpdatedField field;
   VescState state;
 };
