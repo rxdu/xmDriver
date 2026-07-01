@@ -12,39 +12,20 @@
 #include <cassert>
 
 #include "xmsigma/logging/xlogger.hpp"
+#include "xmsigma/serialization/checksum.hpp"
 
 namespace xmotion {
 namespace {
-// reference:
-// https://reveng.sourceforge.io/crc-catalogue/all.htm#crc.cat.crc-8-maxim-dow
-int8_t CalculateChecksum(const std::array<uint8_t, 10>& frame_buffer) {
-  uint8_t crc = 0x00;
-  for (size_t i = 0; i < frame_buffer.size() - 1; ++i) {
-    crc ^= frame_buffer[i];
-    for (size_t j = 0; j < 8; ++j) {
-      if (crc & 0x01) {
-        crc = (crc >> 1) ^ 0x8c;
-      } else {
-        crc >>= 1;
-      }
-    }
-  }
-  return crc;
+// DDSM-210 frames use CRC-8/MAXIM-DOW over the first 9 bytes (the 10th is the
+// checksum). Delegate to the shared foundation primitive. Return uint8_t (not
+// int8_t) so the `== frame_buffer[9]` compare isn't corrupted by sign extension
+// for checksums >= 0x80.
+uint8_t CalculateChecksum(const std::array<uint8_t, 10>& frame_buffer) {
+  return serialization::crc8_maxim(frame_buffer.data(), frame_buffer.size() - 1);
 }
 
-int8_t CalculateChecksum(const std::vector<uint8_t>& frame_buffer) {
-  uint8_t crc = 0x00;
-  for (size_t i = 0; i < frame_buffer.size() - 1; ++i) {
-    crc ^= frame_buffer[i];
-    for (size_t j = 0; j < 8; ++j) {
-      if (crc & 0x01) {
-        crc = (crc >> 1) ^ 0x8c;
-      } else {
-        crc >>= 1;
-      }
-    }
-  }
-  return crc;
+uint8_t CalculateChecksum(const std::vector<uint8_t>& frame_buffer) {
+  return serialization::crc8_maxim(frame_buffer.data(), frame_buffer.size() - 1);
 }
 }  // namespace
 
