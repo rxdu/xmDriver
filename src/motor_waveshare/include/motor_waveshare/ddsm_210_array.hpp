@@ -11,7 +11,7 @@
 
 #include <memory>
 
-#include "xmmu/hal/serial_interface.hpp"
+#include "xmmu/transport/serial_interface.hpp"
 #include "xmmu/hal/motor_controller_array_interface.hpp"
 #include "motor_waveshare/ddsm_210.hpp"
 

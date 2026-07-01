@@ -20,7 +20,7 @@
 #include "asio.hpp"
 
 #include "async_port/ring_buffer.hpp"
-#include "xmmu/hal/serial_interface.hpp"
+#include "xmmu/transport/serial_interface.hpp"
 
 namespace xmotion {
 class AsyncSerial : public std::enable_shared_from_this<AsyncSerial>,

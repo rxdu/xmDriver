@@ -8,10 +8,12 @@
 # coupling. Each module's own CMakeLists is a single xmmu_add_module() call
 # (see cmake/xmmu_module.cmake), which also creates the xmotion::<module> alias.
 
-# interfaces
+# interfaces: device HAL and, as a separate peer layer below it, the transport
+# interfaces (serial / CAN / Modbus contracts).
 add_subdirectory(hal)
+add_subdirectory(transport)
 
-# transport tier
+# transport tier: implementations of the transport interfaces
 add_subdirectory(async_port)
 add_subdirectory(modbus_rtu)
 
@@ -30,7 +32,7 @@ add_subdirectory(input_sbus)
 ## Role-tier convenience targets — link a tier (xmotion::transport / ::motors /
 ## ::sensors / ::input) instead of enumerating its component libraries. The
 ## individual module libraries remain available for minimal-dependency consumers.
-xmmu_add_group(transport async_port modbus_rtu)
+xmmu_add_group(transport transport_interface async_port modbus_rtu)
 xmmu_add_group(motors    motor_akelc motor_vesc motor_waveshare)
 xmmu_add_group(sensors   sensor_imu)
 xmmu_add_group(input     input_hid input_sbus)

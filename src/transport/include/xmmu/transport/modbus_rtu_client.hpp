@@ -11,7 +11,7 @@
 
 #include <cstdint>
 #include <memory>
-#include "xmmu/hal/modbus_rtu_interface.hpp"
+#include "xmmu/transport/modbus_rtu_interface.hpp"
 
 namespace xmotion {
 class ModbusRtuClient {
