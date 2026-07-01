@@ -12,7 +12,7 @@
 
 #include <memory>
 
-#include "xmmu/hal/serial_interface.hpp"
+#include "xmmu/transport/serial_interface.hpp"
 #include "xmmu/hal/imu_interface.hpp"
 
 namespace xmotion {

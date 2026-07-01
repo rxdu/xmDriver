@@ -10,7 +10,7 @@
 #define XMOTION_MOTOR_AKELC_MODBUS_HPP_
 
 #include "motor_akelc/motor_akelc_interface.hpp"
-#include "xmmu/hal/modbus_rtu_client.hpp"
+#include "xmmu/transport/modbus_rtu_client.hpp"
 
 namespace xmotion {
 class MotorAkelcModbus final : public MotorAkelcInterface,

@@ -32,7 +32,7 @@ Adopt a layered, capability-segregated, transport-agnostic, error-uniform HAL wi
 ### Layering
 
 - `xmotion::hal` (this layer, app-facing, stable): `Device`, capability mixins, `Motor`, `MotorFactory`, unit types, `Status`/`Result`. **Apps depend only on this.**
-- `xmmu::transport` (below the HAL, internal — *future move*): `SerialPort`, `CanBus`, `ModbusClient`. Drivers use these; apps never see transport types. (The current `serial_interface.hpp`/`can_interface.hpp`/`modbus_*` headers belong here, not in the app-facing HAL.)
+- `xmmu/transport/` (below the HAL): the transport interfaces (`serial_interface.hpp`, `can_interface.hpp`, `modbus_rtu_interface.hpp`, `modbus_rtu_client.hpp`) — **relocated here** out of the app-facing `xmmu/hal/` so device consumers don't see transport types like `can_frame`. Compatibility facades remain at the old `xmmu/hal/*` paths. (Namespace stays `xmotion` for now; a dedicated `xmotion::transport` namespace is a later, higher-churn step.)
 
 ### Capability model
 
@@ -96,7 +96,7 @@ The legacy `vesc_can_interface` bugs found in the code review (unclamped RPM, `0
 2. Migrate the VESC driver to `VescMotor` behind the factory (`"vesc"`); keep `vesc_can_interface` until consumers move. The unclamped-RPM, `0`-on-error, and no-failsafe-on-disconnect defects from the code review are fixed by construction in `VescMotor`. ✅
 3. Provide a `LegacyMotorAdapter` (`MotorControllerInterface` ⇄ `hal::Motor`) so xmNabla compiles unchanged while it migrates.
 4. Migrate AKELC, Waveshare, then the sensor/RC/HID families on the same template.
-5. Move `serial`/`can`/`modbus` interfaces into `xmmu::transport`, out of the app-facing HAL.
+5. Move `serial`/`can`/`modbus` interfaces into `xmmu/transport/`, out of the app-facing HAL. ✅ (dir-move + facades; `xmotion::transport` namespace deferred)
 6. Update xmNabla's actuator groups; verify the full Σ+μ+∇ build via the umbrella Assembly CI; drop the legacy interfaces.
 
 Each step is verified by the per-component CI and the umbrella Assembly job (which builds Σ+μ+∇ together).
