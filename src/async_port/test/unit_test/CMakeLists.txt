@@ -8,9 +8,10 @@ mark_as_advanced(
     gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
 )
 
-# add unit tests
+# add unit tests. RingBuffer now lives in xmSigma (xmsigma/container) and is
+# tested there; async_port only exercises it through the transport, covered by
+# the lifecycle tests below.
 add_executable(utest_async_port
-    utest_ring_buffer.cpp
     utest_async_lifecycle.cpp)
 target_link_libraries(utest_async_port PRIVATE gtest gmock gtest_main async_port)
 # get_target_property(PRIVATE_HEADERS imview INCLUDE_DIRECTORIES)
