@@ -14,29 +14,34 @@
 namespace xmotion {
 ModbusRtuPort::ModbusRtuPort() {}
 
+ModbusRtuPort::~ModbusRtuPort() { Close(); }
+
 bool ModbusRtuPort::Open(const std::string &port_name, int baud_rate,
                          ModbusRtuInterface::Parity parity,
                          ModbusRtuInterface::DataBit data_bit,
                          ModbusRtuInterface::StopBit stop_bit) {
+  // Start from a clean state so re-opening never leaks or reuses a stale context.
+  Close();
+
+  ctx_ =
+      modbus_new_rtu(port_name.c_str(), baud_rate, static_cast<char>(parity),
+                     static_cast<int>(data_bit), static_cast<int>(stop_bit));
   if (ctx_ == nullptr) {
-    ctx_ =
-        modbus_new_rtu(port_name.c_str(), baud_rate, static_cast<char>(parity),
-                       static_cast<int>(data_bit), static_cast<int>(stop_bit));
-    if (ctx_ == nullptr) {
-      XLOG_ERROR("Unable to create the libmodbus context");
-      return false;
-    }
+    XLOG_ERROR("Unable to create the libmodbus context");
+    return false;
   }
 
   // connect to port
   if (modbus_connect(ctx_) == -1) {
     XLOG_ERROR("Connection failed: {}", modbus_strerror(errno));
+    Close();  // free the context so IsOpened() reflects failure, no leak
     return false;
   }
 
   // by default set 500ms timeout
   if (!SetResponseTimeout(0, 500000)) {
     XLOG_ERROR("Failed to set response timeout to default 500ms");
+    Close();
     return false;
   }
   return true;
@@ -46,6 +51,7 @@ void ModbusRtuPort::Close() {
   if (ctx_ != nullptr) {
     modbus_close(ctx_);
     modbus_free(ctx_);
+    ctx_ = nullptr;  // critical: prevents use-after-free / double-free on reopen
   }
 }
 

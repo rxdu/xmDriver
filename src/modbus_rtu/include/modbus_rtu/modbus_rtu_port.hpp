@@ -17,6 +17,11 @@ namespace xmotion {
 class ModbusRtuPort : public ModbusRtuInterface {
  public:
   ModbusRtuPort();
+  ~ModbusRtuPort();  // RAII: releases the libmodbus context / serial fd
+
+  // Owns a raw modbus_t* — non-copyable to prevent a double modbus_free.
+  ModbusRtuPort(const ModbusRtuPort&) = delete;
+  ModbusRtuPort& operator=(const ModbusRtuPort&) = delete;
 
   // public methods
   // port management
