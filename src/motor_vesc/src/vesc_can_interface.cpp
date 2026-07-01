@@ -45,43 +45,56 @@ StampedVescState VescCanInterface::GetLastState() const {
 }
 
 void VescCanInterface::HandleCanFrame(const struct can_frame *frame) {
-  uint32_t can_id = frame->can_id & 0x1fffffff;
-//  std::cout << "received: " << std::hex << can_id << " id: " << (VescFrame::VescStatus5FrameId | vesc_id_)
-//            << std::endl;
+  const uint32_t can_id = frame->can_id & 0x1fffffff;
+
+  // Every VESC status frame carries 8 data bytes. A matching id with a shorter
+  // DLC is a malformed / foreign frame — reject it rather than parse stale or
+  // kernel-pad trailing bytes into the state.
+  if (frame->can_dlc < 8) return;
+
+  bool updated = false;
   {
     std::lock_guard<std::mutex> lock(state_mtx_);
 
-    stamped_state_.time = VescClock::now();
     if (can_id == (VescFrame::VescStatus1FrameId | vesc_id_)) {
       auto pkt = VescStatus1Packet(*frame);
       stamped_state_.field = VescStateUpdatedField::kStatus1;
       stamped_state_.state.speed = pkt.GetRpm();
       stamped_state_.state.current_motor = pkt.GetCurrent();
       stamped_state_.state.duty_cycle = pkt.GetDuty();
+      updated = true;
     } else if (can_id == (VescFrame::VescStatus2FrameId | vesc_id_)) {
       auto pkt = VescStatus2Packet(*frame);
       stamped_state_.field = VescStateUpdatedField::kStatus2;
       stamped_state_.state.charge_drawn = pkt.GetAmpHours();
       stamped_state_.state.charge_regen = pkt.GetAmpHoursCharged();
+      updated = true;
     } else if (can_id == (VescFrame::VescStatus3FrameId | vesc_id_)) {
       auto pkt = VescStatus3Packet(*frame);
       stamped_state_.field = VescStateUpdatedField::kStatus3;
       stamped_state_.state.energy_drawn = pkt.GetWattHours();
       stamped_state_.state.energy_regen = pkt.GetWattHoursCharged();
+      updated = true;
     } else if (can_id == (VescFrame::VescStatus4FrameId | vesc_id_)) {
       auto pkt = VescStatus4Packet(*frame);
       stamped_state_.field = VescStateUpdatedField::kStatus4;
       stamped_state_.state.temperature_pcb = pkt.GetTempFET();
       stamped_state_.state.current_input = pkt.GetCurrentIn();
+      updated = true;
     } else if (can_id == (VescFrame::VescStatus5FrameId | vesc_id_)) {
       auto pkt = VescStatus5Packet(*frame);
       stamped_state_.field = VescStateUpdatedField::kStatus5;
       stamped_state_.state.displacement = pkt.GetTachoValue();
       stamped_state_.state.voltage_input = pkt.GetVoltageIn();
+      updated = true;
     }
+
+    // Only stamp the state when a frame was actually consumed — don't advance
+    // the timestamp (or publish below) for an unmatched/foreign id.
+    if (updated) stamped_state_.time = VescClock::now();
   }
 
-  if (state_updated_callback_) {
+  if (updated && state_updated_callback_) {
     state_updated_callback_(stamped_state_);
   }
 }
