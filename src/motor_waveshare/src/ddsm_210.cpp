@@ -9,6 +9,7 @@
 #include "motor_waveshare/ddsm_210.hpp"
 
 #include <array>
+#include <iostream>
 #include <sstream>
 
 #include "async_port/async_serial.hpp"

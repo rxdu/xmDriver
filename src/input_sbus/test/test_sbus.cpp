@@ -6,6 +6,8 @@
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
+#include <iostream>
+
 #include "input_sbus/sbus_decoder.hpp"
 #include "async_port/async_serial.hpp"
 
