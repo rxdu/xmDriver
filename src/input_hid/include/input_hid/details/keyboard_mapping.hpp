@@ -16,7 +16,9 @@
 
 namespace xmotion {
 struct KeyboardMapping {
-  static std::unordered_map<int, KeyboardCode> keycode_map;
+  // const: read-only shared lookup. Non-const operator[] would default-insert
+  // on an unmapped key, which is a data race when read from multiple I/O threads.
+  static const std::unordered_map<int, KeyboardCode> keycode_map;
   static std::unordered_map<KeyboardCode, std::string> keyname_map;
   static std::unordered_map<std::string, KeyboardCode> keyname_to_keycode_map;
 

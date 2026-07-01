@@ -33,7 +33,7 @@ class Keyboard : public KeyboardInterface {
   void PollEvent() override;
 
  private:
-  int fd_;
+  int fd_ = -1;
   std::thread io_thread_;
   std::atomic<bool> keep_running_{false};
 

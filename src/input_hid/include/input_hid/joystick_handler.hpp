@@ -42,7 +42,7 @@ class JoystickHandler : public HidInputInterface {
 
  private:
   std::string device_;
-  int fd_;
+  int fd_ = -1;
   std::array<JsAxisValue, static_cast<int>(JsAxis::kLast)> axis_info_;
   std::vector<JoystickButtonEventCallback> button_event_callbacks_;
   std::vector<JoystickAxisEventCallback> axis_event_callbacks_;

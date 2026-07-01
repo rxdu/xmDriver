@@ -86,9 +86,10 @@ Joystick::Joystick(const std::string& event_name) {
 }
 
 Joystick::~Joystick() {
-  if (connected_) {
-    Close();
-  }
+  // Always tear down: the polling thread may be running even when connected_ is
+  // false (e.g. after a hot-unplug via ReopenDevice); a still-joinable thread at
+  // destruction would std::terminate. Close() is idempotent.
+  Close();
 }
 
 void Joystick::InitializeChannels() {
@@ -146,7 +147,33 @@ void Joystick::Close() {
 
   if (connected_) {
     close(fd_);
+    fd_ = -1;
     connected_ = false;
+  }
+  if (device_change_notify_ >= 0) {  // was leaked on every Open/Close cycle
+    close(device_change_notify_);
+    device_change_notify_ = -1;
+  }
+}
+
+void Joystick::ReopenDevice() {
+  // Runs on the polling thread on hot-plug. Re-open ONLY the fd — never call
+  // Close()/Open() here (they join/relaunch io_thread_, i.e. the current thread
+  // joining itself -> std::system_error / terminate).
+  if (fd_ != -1) {
+    close(fd_);
+    fd_ = -1;
+  }
+  fd_ = open(device_name_.c_str(), O_RDWR | O_NONBLOCK);
+  connected_ = (fd_ != -1);
+  if (connected_) {
+    for (unsigned int i = 0; i < Joystick::max_js_axes; ++i) {
+      input_absinfo axisInfo;
+      if (ioctl(fd_, EVIOCGABS(i), &axisInfo) != -1) {
+        axes_[i].min = axisInfo.minimum;
+        axes_[i].max = axisInfo.maximum;
+      }
+    }
   }
 }
 
@@ -182,11 +209,16 @@ void Joystick::ReadJoystickInput() {
     }
     {
       std::lock_guard<std::mutex> lock(axes_mtx_);
-      if (event.type == EV_ABS && event.code < ABS_TOOL_WIDTH) {
+      // Bound to the axes_ array (size max_js_axes = 32). The old guard used
+      // ABS_TOOL_WIDTH (0x28 = 40), so codes 32..39 wrote out of bounds.
+      if (event.type == EV_ABS && event.code < max_js_axes) {
         auto axis = &axes_[event.code];
-        float normalized =
-            (event.value - axis->min) / (float)(axis->max - axis->min) * 2 - 1;
-        axes_[event.code].value = normalized;
+        const int range = axis->max - axis->min;
+        // Skip un-calibrated axes (min == max) — dividing by 0 yielded inf/NaN.
+        if (range != 0) {
+          axes_[event.code].value =
+              (event.value - axis->min) / static_cast<float>(range) * 2 - 1;
+        }
       }
     }
   }
@@ -195,10 +227,10 @@ void Joystick::ReadJoystickInput() {
 void Joystick::PollEvent() {
   // PollEvent which joysticks are connected
   inotify_event event;
-  //  if (read(device_change_notify_, &event, sizeof(event) + 16) != -1) {
   if (read(device_change_notify_, &event, sizeof(event)) != -1) {
-    Close();
-    Open();
+    // Hot-plug: re-open the fd in place. Must NOT Close()/Open() here — this
+    // runs on io_thread_, and Close() joins io_thread_ (self-join -> terminate).
+    ReopenDevice();
   }
 
   // PollEvent and print inputs for each connected joystick

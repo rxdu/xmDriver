@@ -45,13 +45,19 @@ bool Keyboard::StartMonitoring(const std::string& event_name) {
 
 void Keyboard::PollEvent() {
   struct input_event ev;
-  while (ssize_t n = read(fd_, &ev, sizeof(ev)) > 0) {
-    if (ev.type == EV_KEY) {
+  // Read whole events until the fd is drained. The old condition
+  // `while (ssize_t n = read(...) > 0)` bound n to (read(...) > 0) due to
+  // precedence and accepted short reads; require a full input_event.
+  while (read(fd_, &ev, sizeof(ev)) == static_cast<ssize_t>(sizeof(ev))) {
+    if (ev.type == EV_KEY && key_event_callback_ != nullptr) {
       XLOG_DEBUG_STREAM("Key " << ev.code
                                << (ev.value ? " pressed" : " released"));
-      if (key_event_callback_ != nullptr) {
+      // .find() (not operator[]) — the map is a read-only shared lookup; skip
+      // unmapped keys instead of default-inserting (a data race across threads).
+      auto it = KeyboardMapping::keycode_map.find(ev.code);
+      if (it != KeyboardMapping::keycode_map.end()) {
         key_event_callback_(
-            KeyboardMapping::keycode_map[ev.code],
+            it->second,
             (ev.value ? KeyboardEvent::kPress : KeyboardEvent::kRelease));
       }
     }

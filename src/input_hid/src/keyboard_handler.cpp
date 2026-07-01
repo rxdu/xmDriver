@@ -52,10 +52,15 @@ void KeyboardHandler::OnInputEvent() {
     if (ev.type == EV_KEY) {
       XLOG_DEBUG_STREAM("Key " << ev.code
                                << (ev.value ? " pressed" : " released"));
-      for (auto &key_event_callback_ : key_event_callbacks_) {
-        key_event_callback_(
-            KeyboardMapping::keycode_map[ev.code],
-            (ev.value ? KeyboardEvent::kPress : KeyboardEvent::kRelease));
+      // .find() (not operator[]): read-only shared lookup; skip unmapped keys
+      // rather than default-insert into a shared map from an I/O thread.
+      auto it = KeyboardMapping::keycode_map.find(ev.code);
+      if (it != KeyboardMapping::keycode_map.end()) {
+        for (auto &key_event_callback_ : key_event_callbacks_) {
+          key_event_callback_(
+              it->second,
+              (ev.value ? KeyboardEvent::kPress : KeyboardEvent::kRelease));
+        }
       }
     }
   } else {

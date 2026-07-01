@@ -39,7 +39,7 @@ class KeyboardHandler : public HidInputInterface {
 
  private:
   std::string device_;
-  int fd_;
+  int fd_ = -1;
   std::vector<KeyEventCallback> key_event_callbacks_;
 };
 }  // namespace xmotion
