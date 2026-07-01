@@ -32,7 +32,7 @@ Adopt a layered, capability-segregated, transport-agnostic, error-uniform HAL wi
 ### Layering
 
 - `xmotion::hal` (this layer, app-facing, stable): `Device`, capability mixins, `Motor`, `MotorFactory`, unit types, `Status`/`Result`. **Apps depend only on this.**
-- `xmmu/transport/` (below the HAL): the transport interfaces (`serial_interface.hpp`, `can_interface.hpp`, `modbus_rtu_interface.hpp`, `modbus_rtu_client.hpp`) — **relocated here** out of the app-facing `xmmu/hal/` so device consumers don't see transport types like `can_frame`. These interfaces are μ-internal (implemented by async_port/modbus, consumed only by μ drivers), so the move is a clean cut — no `xmmu/hal/*` facades are kept. (Namespace stays `xmotion` for now; a dedicated `xmotion::transport` namespace is a later, higher-churn step.)
+- **Transport is its own peer layer below the HAL, not part of it.** The transport interfaces (`serial_interface.hpp`, `can_interface.hpp`, `modbus_rtu_interface.hpp`, `modbus_rtu_client.hpp`) live in `src/transport/` under `xmmu/transport/`, owned by their own header-only target **`xmotion::transport_interface`** — *not* the `hal` target. The device `hal` ships only device interfaces (motor/imu/rc/sensor + capability/factory) and knows nothing about transport; the transport implementations (`async_port`, `modbus_rtu`) depend on `transport_interface` (not `hal`), so there is no transport→device back-edge. Dependency direction: `drivers → { hal, transport }`, `transport ↛ hal`. Both device HAL and transport have interfaces *and* implementations — the split is by level of abstraction (what a device does vs how bytes move), not interface-vs-impl. (Namespace stays `xmotion`; a dedicated `xmotion::transport` namespace is a later, higher-churn step.)
 
 ### Capability model
 
@@ -96,7 +96,7 @@ The legacy `vesc_can_interface` bugs found in the code review (unclamped RPM, `0
 2. Migrate the VESC driver to `VescMotor` behind the factory (`"vesc"`); keep `vesc_can_interface` until consumers move. The unclamped-RPM, `0`-on-error, and no-failsafe-on-disconnect defects from the code review are fixed by construction in `VescMotor`. ✅
 3. Provide a `LegacyMotorAdapter` (`MotorControllerInterface` ⇄ `hal::Motor`) so xmNabla compiles unchanged while it migrates.
 4. Migrate AKELC, Waveshare, then the sensor/RC/HID families on the same template.
-5. Move `serial`/`can`/`modbus` interfaces into `xmmu/transport/`, out of the app-facing HAL. ✅ (clean dir-move, no facades — μ-internal; `xmotion::transport` namespace deferred)
+5. Split transport into its own layer: interfaces in `src/transport/` (`xmmu/transport/`, target `xmotion::transport_interface`), impls (`async_port`/`modbus_rtu`) depend on it instead of `hal`, `hal` ships device interfaces only. ✅ (clean cut, no facades; `xmotion::transport` namespace deferred)
 6. Update xmNabla's actuator groups; verify the full Σ+μ+∇ build via the umbrella Assembly CI; drop the legacy interfaces.
 
 Each step is verified by the per-component CI and the umbrella Assembly job (which builds Σ+μ+∇ together).
