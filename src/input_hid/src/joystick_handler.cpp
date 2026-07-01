@@ -72,17 +72,20 @@ void JoystickHandler::OnInputEvent() {
             static_cast<JsButton>(ev.code - 0x120),
             (ev.value ? JxButtonEvent::kPress : JxButtonEvent::kRelease));
       }
-    } else if (ev.type == EV_ABS && ev.code < ABS_TOOL_WIDTH) {
-      int axis_index = ev.code;
-      float normalized = (ev.value - axis_info_[axis_index].min) /
-                             static_cast<float>(axis_info_[axis_index].max -
-                                                axis_info_[axis_index].min) *
-                             2 -
-                         1;
-      XLOG_DEBUG_STREAM("Joystick axis " << ev.code
-                                         << " value: " << normalized);
-      for (auto& axis_event_callback_ : axis_event_callbacks_) {
-        axis_event_callback_(static_cast<JsAxis>(ev.code), normalized);
+    } else if (ev.type == EV_ABS && ev.code < axis_info_.size()) {
+      // Bound to axis_info_ (size JsAxis::kLast = 29); the old guard used
+      // ABS_TOOL_WIDTH (40), so codes 29..39 read out of bounds.
+      const int axis_index = ev.code;
+      const int range = axis_info_[axis_index].max - axis_info_[axis_index].min;
+      if (range != 0) {  // skip un-calibrated axis (min == max) -> avoid NaN
+        const float normalized =
+            (ev.value - axis_info_[axis_index].min) /
+                static_cast<float>(range) * 2 - 1;
+        XLOG_DEBUG_STREAM("Joystick axis " << ev.code
+                                           << " value: " << normalized);
+        for (auto& axis_event_callback_ : axis_event_callbacks_) {
+          axis_event_callback_(static_cast<JsAxis>(ev.code), normalized);
+        }
       }
     }
   } else {

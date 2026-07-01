@@ -63,12 +63,15 @@ class Joystick : public JoystickInterface {
  private:
   void InitializeChannels();
   void ReadJoystickInput();
+  // Re-open just the device fd (on hot-plug) from the polling thread — must NOT
+  // touch io_thread_ (that would be a self-join). See PollEvent().
+  void ReopenDevice();
 
   JoystickDescriptor descriptor_;
   std::string device_name_;
 
   int fd_ = -1;
-  int device_change_notify_;
+  int device_change_notify_ = -1;
   std::thread io_thread_;
   std::atomic<bool> keep_running_{false};
   std::atomic<bool> connected_{false};

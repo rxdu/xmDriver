@@ -12,7 +12,7 @@
 #include <linux/input.h>
 
 namespace xmotion {
-std::unordered_map<int, KeyboardCode> KeyboardMapping::keycode_map = {
+const std::unordered_map<int, KeyboardCode> KeyboardMapping::keycode_map = {
     {KEY_A, KeyboardCode::kA},
     {KEY_B, KeyboardCode::kB},
     {KEY_C, KeyboardCode::kC},
