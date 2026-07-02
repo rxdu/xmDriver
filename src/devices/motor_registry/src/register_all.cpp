@@ -10,6 +10,7 @@
 #include "motor_vesc/vesc_motor.hpp"
 #include "motor_waveshare/ddsm_210.hpp"
 #include "motor_waveshare/sms_sts_servo.hpp"
+#include "xmmu/hal/reference/sim_motor_controller.hpp"
 
 namespace xmotion {
 
@@ -18,6 +19,7 @@ bool RegisterAllMotors() {
   RegisterAkelcMotor();
   RegisterDdsm210Motor();
   RegisterSmsStsServo();
+  hal::RegisterSimMotor();  // hardware-free "sim" motor for bring-up / CI
   return true;
 }
 
