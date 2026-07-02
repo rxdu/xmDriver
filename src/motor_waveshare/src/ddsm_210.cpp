@@ -30,7 +30,9 @@ void PrintBuffer(const std::array<uint8_t, 10>& buffer) {
 Ddsm210::Ddsm210(uint8_t id) : motor_id_(id) {}
 
 Ddsm210::~Ddsm210() {
-  SetSpeed(0);
+  // Only command a stop if we actually have an open port — the Ddsm210(id) ctor
+  // leaves serial_ null, so an unconnected instance would null-deref here.
+  if (serial_ && serial_->IsOpened()) SetSpeed(0);
 }
 
 Ddsm210::Ddsm210(uint8_t id, std::shared_ptr<SerialInterface> serial)
@@ -69,7 +71,8 @@ bool Ddsm210::SetMode(Ddsm210::Mode mode, uint32_t timeout_ms) {
     }
   }
 
-  return true;
+  XLOG_WARN("Ddsm210::SetMode: mode not confirmed within timeout");
+  return false;  // was unconditionally returning true even when unconfirmed
 }
 
 Ddsm210::Mode Ddsm210::GetMode() const {

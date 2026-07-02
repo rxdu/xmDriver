@@ -26,7 +26,8 @@ void SmsStsServoArray::RegisterMotor(uint8_t id) {
 }
 
 void SmsStsServoArray::UnregisterMotor(uint8_t id) {
-  ids_.erase(std::find(ids_.begin(), ids_.end(), id));
+  auto it = std::find(ids_.begin(), ids_.end(), id);
+  if (it != ids_.end()) ids_.erase(it);  // erase(end()) is UB if id not present
 }
 
 bool SmsStsServoArray::Connect() {

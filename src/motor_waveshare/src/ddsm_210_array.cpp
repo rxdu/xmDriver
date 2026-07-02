@@ -30,7 +30,8 @@ void Ddsm210Array::RegisterMotor(uint8_t id) {
 
 void Ddsm210Array::UnregisterMotor(uint8_t id) {
   if (motors_.find(id) != motors_.end()) motors_.erase(id);
-  ids_.erase(std::find(ids_.begin(), ids_.end(), id));
+  auto it = std::find(ids_.begin(), ids_.end(), id);
+  if (it != ids_.end()) ids_.erase(it);  // erase(end()) is UB if id not present
 }
 
 bool Ddsm210Array::Connect() {
