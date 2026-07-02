@@ -1,5 +1,10 @@
-# Transport interface layer — the abstract communication-channel contracts
-# (serial / CAN / Modbus-RTU) that transport implementations (async_port,
-# modbus_rtu) realize and device drivers consume. Header-only, std-only; it is a
-# peer layer BELOW the device HAL and must not depend on hal (no back-edge).
-xmmu_add_module(transport_interface INTERFACE)
+# Transport layer: the communication-channel abstraction (interfaces) and its
+# implementations. Grouped here so the layer is visible in the tree; they remain
+# SEPARATE targets so their disjoint heavy deps don't couple — a consumer links
+# only what it needs (async_port -> asio, modbus_rtu -> libmodbus), and the
+# interface target stays dependency-free. See docs/adr/0001.
+#
+# interface first (impls depend on it).
+add_subdirectory(interface)
+add_subdirectory(async_port)
+add_subdirectory(modbus_rtu)
