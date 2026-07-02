@@ -41,6 +41,15 @@ ADR-0003 hardening + HAL-completion effort. `[ ]` todo · `[~]` in progress · `
 - [x] Full build `-DBUILD_TESTING=ON` + `ctest` green (86/86)
 - [x] Updated README module table + CLAUDE.md deps
 
+## Phase 5 — Test-coverage hardening
+- [x] SocketCAN frame conversion extracted to a header + unit-tested (EFF/RTR/dlc/id edge cases)
+- [x] VescMotor made DI-testable; behavioral tests (clamp/NaN/stale/health/stop/disconnect/bus-fault)
+- [x] Fixed VESC negative-current flooring bug (regen) surfaced by the new tests
+- [x] AsyncSerial pty loopback test (RX + send); AsyncCAN socketpair test (RX + error + backpressure)
+- [x] modbus_rtu RAII lifecycle test (construct/destruct, bogus-open, double-close, reopen)
+- [x] CI: ASan+UBSan job (blocking), TSan job (advisory), coverage artifact
+- [x] Full suite 123/123 green, incl. under ASan+UBSan with leak detection
+
 ## Downstream (separate effort — NOT in xmMu)
 - [ ] xmNabla: migrate actuator groups + any IMU/RC/HID consumers to `xmotion::hal`
       (the legacy interfaces are gone; Assembly CI red until ∇ migrates — ADR 0003)

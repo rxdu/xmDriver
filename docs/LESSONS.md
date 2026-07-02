@@ -26,3 +26,13 @@ Team-visible record of mistakes and the patterns that replace them. Consult duri
 - **Pattern:** The transport layer — the most failure-prone code — logged via `std::cout`/`std::cerr` (no levels, no timestamps, unfilterable) and even printed every received CAN frame to stdout by default. Several drivers logged nothing at all.
 - **Correction:** Route all connect/disconnect/fault/timeout/reconnect diagnostics through `xmotion::logging` (XLOG). No `std::cout`/`std::cerr` in library code; no unconditional per-frame prints.
 - **Context:** Observability — xmMu.
+
+### A silent clamp that changes behavior is a hidden safety bug — and a test seam finds it
+- **Pattern:** `VescSetCurrentCmdPacket` clamped motor current to `[0, 20]` A, silently flooring any negative (regen/braking) command to `0` — directly contradicting the driver's documented contract that negative current is regen. It was invisible because nothing exercised the negative path with a transport it could observe.
+- **Correction:** Clamp to the true signed range (`[-20, 20]`), enforce the app envelope upstream, and never let a bound silently reinterpret a command (clamp-and-report, not clamp-and-hide). Give each driver a dependency-injection seam (a fake transport) so command→wire behavior is asserted, not assumed — that seam is what surfaced this.
+- **Context:** Robotics anti-patterns #1 (silent physical-world assumptions) and #2 (unapproved behavior change); xmMu / VESC.
+
+### Make transport testable: extract pure logic, add a loopback seam
+- **Pattern:** The transport layer was rewritten in place with no test seam, so it had only lifecycle smoke tests while the drivers (which had fake-transport seams) were thoroughly covered. The error-prone SocketCAN bit-twiddling (EFF/RTR flags, dlc clamp, id masking) was untested.
+- **Correction:** Extract pure conversion logic into a header so it unit-tests directly; add a loopback seam (pty for serial, socketpair + an internal `OpenFd` for CAN) so RX, error-callback, and backpressure paths run without hardware. Coverage shape follows testability seams — build them in.
+- **Context:** xmMu transport; testing.

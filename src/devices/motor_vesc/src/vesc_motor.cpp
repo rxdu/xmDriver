@@ -56,8 +56,12 @@ const char* FaultToString(int32_t code) {
 
 }  // namespace
 
-VescMotor::VescMotor(Config cfg)
-    : cfg_(std::move(cfg)), monitor_(FreshnessWindow(cfg_.freshness_ms)) {
+VescMotor::VescMotor(Config cfg) : VescMotor(std::move(cfg), nullptr) {}
+
+VescMotor::VescMotor(Config cfg, std::shared_ptr<CanInterface> can)
+    : cfg_(std::move(cfg)),
+      injected_can_(std::move(can)),
+      monitor_(FreshnessWindow(cfg_.freshness_ms)) {
   if (cfg_.max_speed_erpm <= 0.0) cfg_.max_speed_erpm = kDefaultMaxSpeedErpm;
   if (cfg_.max_current_a <= 0.0) cfg_.max_current_a = kDefaultMaxCurrentA;
   if (cfg_.freshness_ms <= 0.0) cfg_.freshness_ms = kDefaultFreshnessMs;
@@ -66,10 +70,20 @@ VescMotor::VescMotor(Config cfg)
 hal::Status VescMotor::Connect() {
   if (connected_) return hal::Status::kOk;
   monitor_.Reset();  // no fresh feedback until the first status frame arrives
+  bus_fault_.store(false);
   // Mark freshness on every VESC status frame (runs on the I/O thread).
   vesc_.SetStateUpdatedCallback(
       [this](const StampedVescState&) { monitor_.Mark(); });
-  if (!vesc_.Connect(cfg_.bus, cfg_.id)) {
+  // An async bus fault (bus-off, interface down, unplug) latches so Health()
+  // reports kFault instead of a link that only looks stale.
+  vesc_.SetErrorCallback([this](TransportStatus reason) {
+    XLOG_ERROR("VescMotor: CAN bus fault on vesc {}: {}",
+               static_cast<int>(cfg_.id), ToString(reason));
+    bus_fault_.store(true);
+  });
+  const bool opened = injected_can_ ? vesc_.Connect(injected_can_, cfg_.id)
+                                    : vesc_.Connect(cfg_.bus, cfg_.id);
+  if (!opened) {
     XLOG_ERROR("VescMotor: failed to open CAN bus '{}' for vesc {}", cfg_.bus,
                static_cast<int>(cfg_.id));
     return hal::Status::kIoError;
@@ -85,6 +99,7 @@ void VescMotor::Disconnect() {
     Stop();  // never leave the motor energized on the way out
     vesc_.Disconnect();
     monitor_.Reset();
+    bus_fault_.store(false);
     connected_ = false;
     XLOG_INFO("VescMotor: disconnected vesc {}", static_cast<int>(cfg_.id));
   }
@@ -97,6 +112,9 @@ hal::DeviceHealth VescMotor::Health() const {
   // looking nominal. A reported fault overrides to kFault.
   hal::DeviceHealth health = hal::HealthFromFreshness(connected_, monitor_);
   if (connected_) {
+    // A latched async bus fault overrides freshness: the link is known bad.
+    if (bus_fault_.load())
+      return {hal::DeviceHealth::State::kFault, "can bus fault"};
     const int32_t fault = vesc_.GetLastState().state.fault_code;
     if (fault != kFaultCodeNone)
       return {hal::DeviceHealth::State::kFault, FaultToString(fault)};

@@ -53,8 +53,11 @@ VescSetDutyCycleCmdPacket::VescSetDutyCycleCmdPacket(uint8_t vesc_id,
 
 VescSetCurrentCmdPacket::VescSetCurrentCmdPacket(uint8_t vesc_id,
                                                  float current) {
-  // limit command
-  ClampCommand(current, 0.0f, 20.0f);
+  // Motor current is SIGNED: negative is regen/braking. The old [0, 20] clamp
+  // silently floored regen to 0 (contradicting the driver's contract) — use a
+  // symmetric magnitude bound so negative current reaches the wire. The app
+  // envelope is enforced upstream in VescMotor; this is the packet backstop.
+  ClampCommand(current, -20.0f, 20.0f);
 
   // convert to can frame
   frame_.id = VescFrame::VescCurrentCmdFrameId | vesc_id;

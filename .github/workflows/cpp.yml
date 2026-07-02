@@ -61,3 +61,101 @@ jobs:
         working-directory: ${{runner.workspace}}/build
         shell: bash
         run: ctest
+
+  # AddressSanitizer + UndefinedBehaviorSanitizer over the whole test suite —
+  # catches the class of defects this component has had (buffer OOB in ch_serial,
+  # fd/context leaks, use-after-free on teardown, UB in packet parsing).
+  sanitizers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Update submodules
+        run: git submodule update --init --recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+      - name: Configure CMake (ASan + UBSan)
+        run: |
+          cmake -B ${{runner.workspace}}/build-asan -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+      - name: Build
+        run: cmake --build ${{runner.workspace}}/build-asan
+      - name: Test (ASan/UBSan)
+        working-directory: ${{runner.workspace}}/build-asan
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --output-on-failure
+
+  # ThreadSanitizer over the threaded paths (evdev reader, SMS-STS refresh loop,
+  # async_port I/O thread, freshness monitor). Advisory: TSan can report benign
+  # races in third-party code, so it surfaces issues without blocking the merge.
+  thread-sanitizer:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Update submodules
+        run: git submodule update --init --recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+      - name: Configure CMake (TSan)
+        run: |
+          cmake -B ${{runner.workspace}}/build-tsan -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
+      - name: Build
+        run: cmake --build ${{runner.workspace}}/build-tsan
+      - name: Test (TSan)
+        working-directory: ${{runner.workspace}}/build-tsan
+        env:
+          TSAN_OPTIONS: halt_on_error=1
+        run: ctest --output-on-failure
+
+  # Line/function coverage report (gcov/lcov), published as an artifact. Not a
+  # hard gate yet — surfaces the number so under-tested code is visible.
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Update submodules
+        run: git submodule update --init --recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev lcov
+      - name: Configure CMake (coverage)
+        run: |
+          cmake -B ${{runner.workspace}}/build-cov -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+      - name: Build
+        run: cmake --build ${{runner.workspace}}/build-cov
+      - name: Test
+        working-directory: ${{runner.workspace}}/build-cov
+        run: ctest --output-on-failure
+      - name: Capture coverage (first-party only)
+        working-directory: ${{runner.workspace}}/build-cov
+        run: |
+          lcov --capture --directory . --output-file coverage.info \
+            --rc gencov_version=1 --ignore-errors mismatch,negative 2>/dev/null || \
+            lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/third_party/*' '*/test/*' \
+            --output-file coverage.filtered.info --ignore-errors unused
+          echo "## Coverage summary" >> "$GITHUB_STEP_SUMMARY"
+          lcov --list coverage.filtered.info | tee -a "$GITHUB_STEP_SUMMARY"
+          genhtml coverage.filtered.info --output-directory coverage-html \
+            --ignore-errors source 2>/dev/null || true
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: ${{runner.workspace}}/build-cov/coverage-html
+          if-no-files-found: ignore
