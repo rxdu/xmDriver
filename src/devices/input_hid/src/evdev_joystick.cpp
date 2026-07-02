@@ -97,15 +97,28 @@ void EvdevJoystick::OnDeviceReady(libevdev* dev) {
     std::lock_guard<std::mutex> lock(state_mtx_);
     if (name != nullptr) device_name_ = name;
   }
-  // Cache each modelled axis's reported range for [-1, 1] normalisation.
+  // Seed the initial state from the device so a Read() right after Connect()
+  // reflects reality — a throttle resting at min or a button held at startup —
+  // instead of all-zeros until the first event moves it. Runs before the reader
+  // thread starts, so no lock is needed against HandleEvent; take state_mtx_ for
+  // the concurrent Read() path.
+  std::lock_guard<std::mutex> lock(state_mtx_);
   for (std::size_t i = 0; i < kNumAxes; ++i) {
     const int code = input_hid_detail::JsAxisToAbsCode(static_cast<int>(i));
     if (code < 0) continue;
     if (const input_absinfo* info = libevdev_get_abs_info(dev, code)) {
       axis_min_[i] = info->minimum;
       axis_max_[i] = info->maximum;
+      state_.axes[i] = input_hid_detail::NormalizeAxis(info->value, info->minimum,
+                                                       info->maximum);
     }
   }
+  for (std::size_t i = 0; i < state_.buttons.size(); ++i) {
+    const int code = input_hid_detail::JsButtonToKeyCode(static_cast<int>(i));
+    if (code < 0) continue;
+    state_.buttons[i] = libevdev_get_event_value(dev, EV_KEY, code) != 0;
+  }
+  state_.stamp = std::chrono::steady_clock::now();
 }
 
 void EvdevJoystick::HandleEvent(const input_event& ev) {

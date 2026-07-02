@@ -44,6 +44,38 @@ int JsButtonIndex(unsigned int code) {
   }
 }
 
+int JsButtonToKeyCode(int button_index) {
+  using B = hal::JsButton;
+  switch (static_cast<B>(button_index)) {
+    case B::kTrigger: return BTN_TRIGGER;
+    case B::kThumb:   return BTN_THUMB;
+    case B::kThumb2:  return BTN_THUMB2;
+    case B::kTop1:    return BTN_TOP;
+    case B::kTop2:    return BTN_TOP2;
+    case B::kPinkie:  return BTN_PINKIE;
+    case B::kBase:    return BTN_BASE;
+    case B::kBase2:   return BTN_BASE2;
+    case B::kBase3:   return BTN_BASE3;
+    case B::kBase4:   return BTN_BASE4;
+    case B::kBase5:   return BTN_BASE5;
+    case B::kBase6:   return BTN_BASE6;
+    case B::kSouth:   return BTN_SOUTH;
+    case B::kEast:    return BTN_EAST;
+    case B::kNorth:   return BTN_NORTH;
+    case B::kWest:    return BTN_WEST;
+    case B::kTL:      return BTN_TL;
+    case B::kTR:      return BTN_TR;
+    case B::kTL2:     return BTN_TL2;
+    case B::kTR2:     return BTN_TR2;
+    case B::kSelect:  return BTN_SELECT;
+    case B::kStart:   return BTN_START;
+    case B::kMode:    return BTN_MODE;
+    case B::kThumbL:  return BTN_THUMBL;
+    case B::kThumbR:  return BTN_THUMBR;
+    default:          return -1;
+  }
+}
+
 int JsAxisIndex(unsigned int code) {
   using A = hal::JsAxis;
   switch (code) {
