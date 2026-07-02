@@ -53,6 +53,16 @@ TEST(EvdevTranslate, EveryMappedButtonIndexIsInBounds) {
   }
 }
 
+TEST(EvdevTranslate, ButtonCodesRoundTrip) {
+  // Inverse map (used to seed initial button state at connect) is consistent
+  // for every modelled button.
+  for (int i = 0; i < static_cast<int>(hal::JsButton::kLast); ++i) {
+    const int code = input_hid_detail::JsButtonToKeyCode(i);
+    ASSERT_GE(code, 0) << "button " << i;
+    EXPECT_EQ(JsButtonIndex(static_cast<unsigned int>(code)), i);
+  }
+}
+
 TEST(EvdevTranslate, AxisCodesRoundTrip) {
   EXPECT_EQ(JsAxisIndex(ABS_X), static_cast<int>(hal::JsAxis::kX));
   EXPECT_EQ(JsAxisIndex(ABS_HAT0X), static_cast<int>(hal::JsAxis::kHat0X));

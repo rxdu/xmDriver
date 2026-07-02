@@ -22,6 +22,10 @@ namespace xmotion::input_hid_detail {
 // a joystick button we model.
 int JsButtonIndex(unsigned int code);
 
+// Inverse of JsButtonIndex: hal::JsButton index -> evdev EV_KEY code, or -1.
+// Used to seed the current button state from the device at connect.
+int JsButtonToKeyCode(int button_index);
+
 // Maps an evdev EV_ABS code to a hal::JsAxis index, or -1 if not modelled.
 int JsAxisIndex(unsigned int code);
 

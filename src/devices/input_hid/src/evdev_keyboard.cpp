@@ -88,12 +88,16 @@ void EvdevKeyboard::HandleEvent(const input_event& ev) {
   if (it == KeyboardMapping::keycode_map.end()) return;
 
   const hal::KeyboardCode code = it->second;
-  const bool pressed = ev.value != 0;  // 1 = press, 2 = autorepeat, 0 = release
+  const int value = ev.value;  // 1 = press, 2 = autorepeat, 0 = release
   {
     std::lock_guard<std::mutex> lock(state_mtx_);
-    state_.pressed.set(static_cast<std::size_t>(code), pressed);
+    state_.pressed.set(static_cast<std::size_t>(code), value != 0);
     state_.stamp = std::chrono::steady_clock::now();
   }
+
+  // Autorepeat (value 2) means "still held" — the key state already reflects it,
+  // so don't re-fire kPress; only real down/up transitions emit an event.
+  if (value == 2) return;
 
   KeyEventCallback cb;
   {
@@ -101,7 +105,8 @@ void EvdevKeyboard::HandleEvent(const input_event& ev) {
     cb = key_cb_;
   }
   if (cb) {
-    cb(code, pressed ? hal::KeyboardEvent::kPress : hal::KeyboardEvent::kRelease);
+    cb(code, value != 0 ? hal::KeyboardEvent::kPress
+                        : hal::KeyboardEvent::kRelease);
   }
 }
 
