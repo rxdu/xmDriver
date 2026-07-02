@@ -51,9 +51,22 @@ void UnpackData(hipnuc_raw_t *data, ImuData *data_imu) {
 }
 }  // namespace
 
+ImuHipnuc::ImuHipnuc() {
+  last_data_.quat.setIdentity();  // Eigen leaves quaternions uninitialized
+  raw_state_ = new hipnuc_raw_t{};
+}
+
+ImuHipnuc::~ImuHipnuc() {
+  if (serial_) serial_->Close();
+  delete static_cast<hipnuc_raw_t *>(raw_state_);
+}
+
 bool ImuHipnuc::Connect(std::string uart_name, uint32_t baud_rate) {
   if (!serial_) serial_ = std::make_shared<AsyncSerial>(uart_name, baud_rate);
   if (serial_->IsOpened()) serial_->Close();
+
+  // Reset the parser accumulator so a reconnect never resumes mid-frame.
+  *static_cast<hipnuc_raw_t *>(raw_state_) = hipnuc_raw_t{};
 
   serial_->SetReceiveCallback(
       std::bind(&ImuHipnuc::ParseSerialData, this, std::placeholders::_1,
@@ -62,27 +75,31 @@ bool ImuHipnuc::Connect(std::string uart_name, uint32_t baud_rate) {
   return serial_->Open() && serial_->IsOpened();
 }
 
-void ImuHipnuc::Disconnect() { serial_->Close(); }
+void ImuHipnuc::Disconnect() {
+  if (serial_) serial_->Close();
+}
 
-bool ImuHipnuc::IsConnected() { return serial_->IsOpened(); }
+bool ImuHipnuc::IsConnected() { return serial_ && serial_->IsOpened(); }
 
-void ImuHipnuc::GetLastImuData(ImuData *data) {}
+void ImuHipnuc::GetLastImuData(ImuData *data) {
+  if (data == nullptr) return;
+  std::lock_guard<std::mutex> lock(data_mtx_);
+  *data = last_data_;  // was an empty body -> caller got uninitialized garbage
+}
 
 void ImuHipnuc::ParseSerialData(uint8_t *data, const size_t bufsize,
                                 size_t len) {
-  static hipnuc_raw_t raw;
-  for (int i = 0; i < len; i++) {
-    int rev = ch_serial_input(&raw, data[i]);
-
-    if (rev) {
+  auto *raw = static_cast<hipnuc_raw_t *>(raw_state_);
+  for (size_t i = 0; i < len; ++i) {
+    if (ch_serial_input(raw, data[i])) {
       ImuData imu;
-      UnpackData(&raw, &imu);
+      UnpackData(raw, &imu);  // populates all fields incl. the quaternion
 
+      {
+        std::lock_guard<std::mutex> lock(data_mtx_);
+        last_data_ = imu;
+      }
       if (callback_ != nullptr) callback_(imu);
-
-      //      printf("accel: %6.2f, %6.2f, %6.2f; gyro: %6.2f, %6.2f, %6.2f\n",
-      //             imu.accel.x, imu.accel.y, imu.accel.z, imu.gyro.x,
-      //             imu.gyro.y, imu.gyro.z);
     }
   }
 }
