@@ -19,3 +19,21 @@ target_include_directories(utest_async_port PRIVATE ${PRIVATE_HEADERS})
 
 gtest_discover_tests(utest_async_port)
 add_test(NAME gtest_async_port COMMAND utest_async_port)
+
+# Pure SocketCAN <-> CanFrame conversion logic (no hardware, no asio).
+add_executable(utest_socketcan_frame utest_socketcan_frame.cpp)
+target_link_libraries(utest_socketcan_frame PRIVATE gtest gmock gtest_main async_port)
+gtest_discover_tests(utest_socketcan_frame)
+add_test(NAME gtest_socketcan_frame COMMAND utest_socketcan_frame)
+
+# AsyncSerial RX/TX over a pty (needs openpty from libutil).
+add_executable(utest_async_loopback utest_async_loopback.cpp)
+target_link_libraries(utest_async_loopback PRIVATE gtest gmock gtest_main async_port util)
+gtest_discover_tests(utest_async_loopback)
+add_test(NAME gtest_async_loopback COMMAND utest_async_loopback)
+
+# AsyncCAN RX / error-callback / backpressure over an injected socketpair fd.
+add_executable(utest_async_can_fd utest_async_can_fd.cpp)
+target_link_libraries(utest_async_can_fd PRIVATE gtest gmock gtest_main async_port)
+gtest_discover_tests(utest_async_can_fd)
+add_test(NAME gtest_async_can_fd COMMAND utest_async_can_fd)

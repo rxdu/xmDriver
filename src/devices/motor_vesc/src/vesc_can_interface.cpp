@@ -35,8 +35,14 @@ TransportStatus SendCmd(const std::shared_ptr<CanInterface> &can,
 }  // namespace
 
 bool VescCanInterface::Connect(const std::string &can, uint8_t vesc_id) {
+  return Connect(std::make_shared<AsyncCAN>(can), vesc_id);
+}
+
+bool VescCanInterface::Connect(std::shared_ptr<CanInterface> can,
+                               uint8_t vesc_id) {
   vesc_id_ = vesc_id;
-  can_ = std::make_shared<AsyncCAN>(can);
+  can_ = std::move(can);
+  if (can_ == nullptr) return false;
   can_->SetReceiveCallback(
       std::bind(&VescCanInterface::HandleCanFrame, this, std::placeholders::_1));
   // Observe async bus faults: log, then forward to any owner-installed handler

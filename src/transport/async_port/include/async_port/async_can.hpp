@@ -51,6 +51,15 @@ class AsyncCAN : public std::enable_shared_from_this<AsyncCAN>,
 
   TransportStatus SendFrame(const CanFrame &frame) override;
 
+  // TEST-ONLY / INTERNAL SEAM — not part of the CanInterface contract.
+  // Adopts an already-open stream fd (e.g. one end of a socketpair) in place of
+  // a real PF_CAN socket: assigns it to socketcan_stream_, marks the port open,
+  // and arms the read loop — mirroring Open() minus socket()/bind(). Lets the RX,
+  // error-callback, and backpressure paths be exercised without CAN hardware.
+  // Takes ownership of the fd (asio closes it on teardown). Do not use in
+  // production code.
+  bool OpenFd(int fd);
+
  private:
   std::string port_;
   std::atomic<bool> port_opened_{false};

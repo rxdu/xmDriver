@@ -19,30 +19,13 @@
 #include "xmsigma/logging/xlogger.hpp"
 
 #include "async_port/io_service.hpp"
+#include "async_port/detail/socketcan_frame.hpp"
 
 namespace xmotion {
 namespace {
 
-CanFrame ToCanFrame(const struct can_frame &f) {
-  CanFrame out;
-  out.extended = (f.can_id & CAN_EFF_FLAG) != 0;
-  out.remote = (f.can_id & CAN_RTR_FLAG) != 0;
-  out.id = f.can_id & (out.extended ? CAN_EFF_MASK : CAN_SFF_MASK);
-  out.dlc = f.can_dlc > 8 ? 8 : f.can_dlc;
-  for (std::uint8_t i = 0; i < out.dlc; ++i) out.data[i] = f.data[i];
-  return out;
-}
-
-struct can_frame ToLinuxFrame(const CanFrame &f) {
-  struct can_frame out;
-  memset(&out, 0, sizeof(out));
-  out.can_id = f.id & (f.extended ? CAN_EFF_MASK : CAN_SFF_MASK);
-  if (f.extended) out.can_id |= CAN_EFF_FLAG;
-  if (f.remote) out.can_id |= CAN_RTR_FLAG;
-  out.can_dlc = f.dlc > 8 ? 8 : f.dlc;
-  for (std::uint8_t i = 0; i < out.can_dlc; ++i) out.data[i] = f.data[i];
-  return out;
-}
+using async_port_detail::ToCanFrame;
+using async_port_detail::ToLinuxFrame;
 
 }  // namespace
 
@@ -92,6 +75,19 @@ bool AsyncCAN::Open() {
   XLOG_INFO("CAN port opened: {}", port_);
 
   // Arm the read loop on the I/O thread.
+  auto self = shared_from_this();
+  asio::post(IoService::Instance().context(), [self] { self->ReadFromPort(); });
+  return true;
+}
+
+bool AsyncCAN::OpenFd(int fd) {
+  // TEST-ONLY / INTERNAL SEAM (see header). Adopt an already-open stream fd and
+  // arm the read loop, skipping socket()/ioctl()/bind(). Runs the same read-loop
+  // arming as Open() so the RX / error / backpressure paths behave identically.
+  if (fd < 0) return false;
+  can_fd_ = fd;
+  socketcan_stream_.assign(can_fd_);  // asio owns the fd from here
+  port_opened_ = true;
   auto self = shared_from_this();
   asio::post(IoService::Instance().context(), [self] { self->ReadFromPort(); });
   return true;

@@ -31,7 +31,14 @@ class VescCanInterface {
  public:
   VescCanInterface() = default;
 
+  // Opens an AsyncCAN on `can` and wires it to this interface. Convenience path
+  // for production; delegates to the transport-injecting overload below so all
+  // callback wiring lives in one place.
   bool Connect(const std::string &can, uint8_t vesc_id);
+  // Test / shared-bus seam: adopt an already-constructed transport instead of
+  // creating an AsyncCAN. Installs the receive/error callbacks and Open()s it.
+  // Returns false if `can` is null.
+  bool Connect(std::shared_ptr<CanInterface> can, uint8_t vesc_id);
   void Disconnect();
 
   uint8_t GetVescId() const;

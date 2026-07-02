@@ -18,6 +18,7 @@
 #ifndef XMMU_MOTOR_VESC_VESC_MOTOR_HPP
 #define XMMU_MOTOR_VESC_VESC_MOTOR_HPP
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -45,6 +46,9 @@ class VescMotor final : public hal::Motor,
   };
 
   explicit VescMotor(Config cfg);
+  // Transport-injecting ctor (tests / shared-bus setups). If `can` is null,
+  // Connect() builds an AsyncCAN from cfg.bus, matching the production path.
+  VescMotor(Config cfg, std::shared_ptr<CanInterface> can);
 
   // --- hal::Device ---
   hal::Status Connect() override;
@@ -69,10 +73,17 @@ class VescMotor final : public hal::Motor,
 
  private:
   Config cfg_;
+  // Non-null only when a transport was injected via the test/shared-bus ctor;
+  // Connect() hands it to VescCanInterface instead of opening cfg_.bus.
+  std::shared_ptr<CanInterface> injected_can_;
   VescCanInterface vesc_;
   // Marked on every VESC status frame; drives kTimeout reads and stale Health.
   hal::FreshnessMonitor monitor_;
   bool connected_ = false;
+  // Set from the transport error callback (I/O thread) on an async bus fault so
+  // Health() reports kFault instead of only a stale/degraded read. Atomic
+  // because it is written off the control thread.
+  std::atomic<bool> bus_fault_{false};
 };
 
 // Explicit registration for static-library linkage (a static self-registrar can
