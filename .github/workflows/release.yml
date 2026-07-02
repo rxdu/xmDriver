@@ -33,7 +33,7 @@ jobs:
           libspdlog-dev \
           libasio-dev \
           libmodbus-dev \
-          libevent-dev \
+          libevdev-dev \
           dpkg-dev
 
     - name: Set version and system info

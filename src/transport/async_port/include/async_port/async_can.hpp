@@ -1,13 +1,11 @@
 /*
  * async_can.hpp
  *
- * Created on: Sep 10, 2020 13:22
- * Description:
- *
- * Note: CAN TX is queued and serialized on the io thread — frames are sent in
- *  order, one async write in flight at a time. SendFrame() copies the frame, so
- *  the caller need not keep it alive, and all socket operations run on the io
- *  thread (no cross-thread use of the descriptor).
+ * SocketCAN port on the shared asio io_context (ADR 0002 / ADR 0003). TX is a
+ * bounded queue drained one write at a time on the I/O thread; SendFrame()
+ * returns a TransportStatus so a caller sees backpressure (kQueueFull) or a dead
+ * port (kNotOpen) instead of a silent void. The wire type at the interface is
+ * the first-party CanFrame; the Linux `struct can_frame` stays internal.
  *
  * Copyright (c) 2020 Ruixiang Du (rdu)
  */
@@ -15,16 +13,17 @@
 #ifndef ASYNC_CAN_HPP
 #define ASYNC_CAN_HPP
 
-#include <linux/can.h>
-
 #include <atomic>
+#include <cstddef>
 #include <deque>
 #include <memory>
-#include <thread>
+#include <mutex>
+#include <string>
 #include <functional>
 
 #include "asio.hpp"
 #include "asio/posix/basic_stream_descriptor.hpp"
+#include <linux/can.h>
 
 #include "xmmu/transport/can_interface.hpp"
 
@@ -32,13 +31,13 @@ namespace xmotion {
 class AsyncCAN : public std::enable_shared_from_this<AsyncCAN>,
                  public CanInterface {
  public:
-  using ReceiveCallback = std::function<void(const struct can_frame *rx_frame)>;
+  // Bound on the TX backlog. A stalled/bus-off link makes writes never complete;
+  // without a bound the queue would grow without limit (a determinism hazard).
+  static constexpr std::size_t kMaxTxQueue = 256;
 
- public:
   AsyncCAN(std::string can_port = "can0");
   ~AsyncCAN();
 
-  // do not allow copy
   AsyncCAN(const AsyncCAN &) = delete;
   AsyncCAN &operator=(const AsyncCAN &) = delete;
 
@@ -47,38 +46,32 @@ class AsyncCAN : public std::enable_shared_from_this<AsyncCAN>,
   void Close() override;
   bool IsOpened() const override;
 
-  void SetReceiveCallback(ReceiveCallback cb) override { rcv_cb_ = cb; }
+  void SetReceiveCallback(ReceiveCallback cb) override { rcv_cb_ = std::move(cb); }
+  void SetErrorCallback(ErrorCallback cb) override { err_cb_ = std::move(cb); }
 
-  void SendFrame(const struct can_frame &frame) override;
+  TransportStatus SendFrame(const CanFrame &frame) override;
 
  private:
   std::string port_;
   std::atomic<bool> port_opened_{false};
 
-#if ASIO_VERSION < 101200L
-  asio::io_service io_context_;
-#else
-  asio::io_context io_context_;
-#endif
-
-  std::thread io_thread_;
-
-  int can_fd_;
+  int can_fd_ = -1;
   asio::posix::basic_stream_descriptor<> socketcan_stream_;
 
   struct can_frame rcv_frame_;
   ReceiveCallback rcv_cb_ = nullptr;
+  ErrorCallback err_cb_ = nullptr;
 
-  // TX queue — all accessed only on the io thread (SendFrame posts onto it).
+  // TX queue. Guarded by tx_mutex_ so SendFrame() (caller thread) can enqueue
+  // and report backpressure synchronously; draining runs on the I/O thread.
+  std::mutex tx_mutex_;
   std::deque<struct can_frame> tx_queue_;
-  struct can_frame tx_frame_;  // the in-flight frame, kept alive for the write
+  struct can_frame tx_frame_;  // in-flight frame, kept alive for the write
   bool tx_in_progress_ = false;
 
-  void DefaultReceiveCallback(can_frame *rx_frame);
-  void ReadFromPort(struct can_frame &rec_frame,
-                    asio::posix::basic_stream_descriptor<> &stream);
-  void StartWrite();   // io-thread only: kick the next queued write
-  void HandleError();  // io-thread-safe teardown (does not join)
+  void ReadFromPort();
+  void StartWrite();      // I/O thread: kick the next queued write
+  void HandleError(TransportStatus reason);  // I/O-thread teardown (no join)
 };
 }  // namespace xmotion
 

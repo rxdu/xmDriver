@@ -11,14 +11,21 @@
 
 #if defined(__linux__)
 #include <linux/serial.h>
+#include <sys/ioctl.h>
 #endif
 
 #include <cstring>
-#include <iostream>
+#include <future>
+
+#include "xmsigma/logging/xlogger.hpp"
+
+#include "async_port/io_service.hpp"
 
 namespace xmotion {
 AsyncSerial::AsyncSerial(const std::string &port_name, uint32_t baud_rate)
-    : port_(port_name), baud_rate_(baud_rate), serial_port_(io_context_) {}
+    : port_(port_name),
+      serial_port_(IoService::Instance().context()),
+      baud_rate_(baud_rate) {}
 
 AsyncSerial::~AsyncSerial() { Close(); }
 
@@ -29,7 +36,7 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
 
   struct serial_struct serial;
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    perror("TIOCGSERIAL");
+    XLOG_ERROR("TIOCGSERIAL failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
@@ -38,23 +45,23 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
   serial.custom_divisor = serial.baud_base / baudrate;
 
   if (serial.custom_divisor == 0) {
-    fprintf(stderr, "Invalid custom divisor for baud rate %d\n", baudrate);
+    XLOG_ERROR("Invalid custom divisor for baud rate {}", baudrate);
     return false;
   }
 
   if (ioctl(fd, TIOCSSERIAL, &serial) < 0) {
-    perror("TIOCSSERIAL");
+    XLOG_ERROR("TIOCSSERIAL failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
   // Verify the settings
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    perror("TIOCGSERIAL");
+    XLOG_ERROR("TIOCGSERIAL (verify) failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
-  printf("Changed baudrate to: %d (divisor: %d, base: %d)\n", baudrate,
-         serial.custom_divisor, serial.baud_base);
+  XLOG_INFO("Changed baudrate on {} to {} (divisor {}, base {})", port_,
+            baudrate, serial.custom_divisor, serial.baud_base);
 
   return true;
 }
@@ -101,58 +108,59 @@ bool AsyncSerial::Open() {
 #endif
 
     port_opened_ = true;
-    std::cout << "Start listening to port: " << port_ << "@" << baud_rate_
-              << std::endl;
+    XLOG_INFO("Serial port opened: {}@{}", port_, baud_rate_);
   } catch (std::system_error &e) {
-    std::cout << e.what() << std::endl;
+    XLOG_ERROR("Failed to open serial port {}: {}", port_, e.what());
     return false;
   }
 
-  // give some work to io_service to start async io chain
-#if ASIO_VERSION < 101200L
-  io_context_.post(std::bind(&AsyncSerial::ReadFromPort, this));
-#else
-  asio::post(io_context_, std::bind(&AsyncSerial::ReadFromPort, this));
-#endif
-
-  // start io thread
-  io_thread_ = std::thread([this]() { io_context_.run(); });
-
+  // Arm the read loop on the shared I/O thread.
+  auto self = shared_from_this();
+  asio::post(IoService::Instance().context(), [self] { self->ReadFromPort(); });
   return true;
 }
 
 void AsyncSerial::Close() {
-  // External / destructor teardown: safe to join here because Close() is called
-  // from the owning thread, never from a completion handler (those use
-  // HandleError(), which does not join — see below).
-  io_context_.stop();
-  if (io_thread_.joinable()) io_thread_.join();
-  io_context_.reset();
+  // External / destructor teardown. The descriptor is only touched on the I/O
+  // thread, so post the teardown there and wait. Never called from a completion
+  // handler (those use HandleError()).
+  if (!serial_port_.is_open()) {
+    port_opened_ = false;
+    return;
+  }
+  std::promise<void> done;
+  auto fut = done.get_future();
+  auto self = shared_from_this();
+  asio::post(IoService::Instance().context(), [self, &done] {
+    std::error_code ec;
+    self->serial_port_.cancel(ec);
+    self->serial_port_.close(ec);
+    self->port_opened_ = false;
+    done.set_value();
+  });
+  fut.wait();
+}
 
+void AsyncSerial::HandleError(TransportStatus reason) {
+  // Runs on the I/O thread from a completion handler. Tear the port down but
+  // never join the shared I/O thread from within itself. With the read loop not
+  // re-armed and the port closed, no further work is queued for this port.
   std::error_code ec;
   serial_port_.cancel(ec);
   serial_port_.close(ec);
-
-  port_opened_ = false;
+  const bool was_open = port_opened_.exchange(false);
+  {
+    std::lock_guard<std::recursive_mutex> lock(tx_mutex_);
+    tx_rbuf_.Reset();
+    tx_in_progress_ = false;
+  }
+  if (was_open && reason != TransportStatus::kOk) {
+    XLOG_WARN("Serial port {} faulted: {}", port_, ToString(reason));
+    if (err_cb_) err_cb_(reason);
+  }
 }
 
-void AsyncSerial::HandleError() {
-  // Runs ON the io thread, from a completion handler. Tear the port down but
-  // NEVER join the io thread from within itself — calling Close() here was a
-  // self-join (std::system_error / terminate) on any device error, e.g. a
-  // USB-serial unplug. With the read loop not re-armed and the port closed, the
-  // io_context runs out of work and the io thread exits on its own; a later
-  // Close()/destructor then joins it cleanly.
-  std::error_code ec;
-  serial_port_.cancel(ec);
-  serial_port_.close(ec);
-  port_opened_ = false;
-}
-
-bool AsyncSerial::IsOpened() const { return serial_port_.is_open(); }
-
-void AsyncSerial::DefaultReceiveCallback(uint8_t *data, const size_t bufsize,
-                                         size_t len) {}
+bool AsyncSerial::IsOpened() const { return port_opened_.load(); }
 
 void AsyncSerial::ReadFromPort() {
   auto sthis = shared_from_this();
@@ -160,16 +168,14 @@ void AsyncSerial::ReadFromPort() {
       asio::buffer(rx_buf_),
       [sthis](asio::error_code error, size_t bytes_transferred) {
         if (error) {
-          sthis->HandleError();
+          if (error != asio::error::operation_aborted)
+            sthis->HandleError(TransportStatus::kIoError);
           return;
         }
 
         if (sthis->rcv_cb_ != nullptr) {
           sthis->rcv_cb_(sthis->rx_buf_.data(), sthis->rx_buf_.size(),
                          bytes_transferred);
-        } else {
-          sthis->DefaultReceiveCallback(
-              sthis->rx_buf_.data(), sthis->rx_buf_.size(), bytes_transferred);
         }
         sthis->ReadFromPort();
       });
@@ -191,7 +197,8 @@ void AsyncSerial::WriteToPort(bool check_if_busy) {
       asio::buffer(tx_buf_, len),
       [sthis](asio::error_code error, size_t bytes_transferred) {
         if (error) {
-          sthis->HandleError();
+          if (error != asio::error::operation_aborted)
+            sthis->HandleError(TransportStatus::kIoError);
           return;
         }
         std::lock_guard<std::recursive_mutex> lock(sthis->tx_mutex_);
@@ -204,21 +211,23 @@ void AsyncSerial::WriteToPort(bool check_if_busy) {
       });
 }
 
-void AsyncSerial::SendBytes(const uint8_t *bytes, size_t length) {
-  if (!IsOpened()) {
-    std::cerr << "Failed to send, port closed" << std::endl;
-    return;
-  }
-  assert(length < rxtx_buffer_size);
+TransportStatus AsyncSerial::SendBytes(const uint8_t *bytes, size_t length) {
+  if (!IsOpened()) return TransportStatus::kNotOpen;
+  if (length == 0) return TransportStatus::kOk;
+  if (length >= rxtx_buffer_size) return TransportStatus::kInvalidArgument;
+
   std::lock_guard<std::recursive_mutex> lock(tx_mutex_);
   if (tx_rbuf_.GetFreeSize() < length) {
-    throw std::length_error(
-        "AsyncSerial::SendBytes: tx buffer overflow, try to slow down sending "
-        "data");
+    // Bounded TX buffer full — report backpressure instead of throwing.
+    XLOG_WARN("Serial TX buffer full on {} ({} bytes free < {}), dropping",
+              port_, tx_rbuf_.GetFreeSize(), length);
+    return TransportStatus::kQueueFull;
   }
   std::vector<uint8_t> data(bytes, bytes + length);
   tx_rbuf_.Write(data, length);
-  io_context_.post(
-      std::bind(&AsyncSerial::WriteToPort, shared_from_this(), true));
+  auto self = shared_from_this();
+  asio::post(IoService::Instance().context(),
+             [self] { self->WriteToPort(true); });
+  return TransportStatus::kOk;
 }
 }  // namespace xmotion

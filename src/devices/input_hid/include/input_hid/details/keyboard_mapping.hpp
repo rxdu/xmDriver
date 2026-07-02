@@ -12,10 +12,14 @@
 #include <string>
 #include <unordered_map>
 
-#include "xmmu/hal/keyboard_interface.hpp"
+#include "xmmu/hal/keyboard.hpp"
 
 namespace xmotion {
+// Maps Linux evdev key codes to/from the canonical hal::KeyboardCode. Reused by
+// EvdevKeyboard; kept as the single source of the key mapping (ADR 0003).
 struct KeyboardMapping {
+  using KeyboardCode = hal::KeyboardCode;
+
   // const: read-only shared lookup. Non-const operator[] would default-insert
   // on an unmapped key, which is a data race when read from multiple I/O threads.
   static const std::unordered_map<int, KeyboardCode> keycode_map;

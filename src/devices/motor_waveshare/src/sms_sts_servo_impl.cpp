@@ -1,165 +1,247 @@
 /*
- * @file sms_sts_servo_impl.cpp
- * @date 10/20/24
- * @brief
+ * sms_sts_servo_impl.cpp
+ *
+ * SmsStsServo::Impl — bridges the vendored (synchronous, half-duplex) SCServo
+ * protocol to the HAL contract. Feedback is polled on a background thread into a
+ * cached snapshot so the public reads never block the caller or sleep per-servo.
+ * Included by sms_sts_servo.cpp (not compiled standalone).
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
 #include "motor_waveshare/sms_sts_servo.hpp"
 
+#include <atomic>
+#include <chrono>
+#include <cmath>
+#include <mutex>
 #include <thread>
 
 #include "SCServo.h"
 
+#include "xmmu/hal/freshness.hpp"
 #include "xmsigma/logging/xlogger.hpp"
 
 namespace xmotion {
+namespace {
+
+constexpr double kDefaultMaxSpeed = 2400.0;   // step/sec envelope
+constexpr double kStepsPerRev = 4095.0;       // 0..360 deg maps to 0..4095
+constexpr double kMaxPositionDeg = 360.0;
+constexpr double kOverTempC = 70.0;           // servo shutdown threshold margin
+constexpr auto kPollPeriod = std::chrono::milliseconds(20);
+constexpr auto kFreshnessTimeout = std::chrono::milliseconds(150);
+
+constexpr double kRadToDeg = 180.0 / M_PI;
+constexpr double kDegToRad = M_PI / 180.0;
+
+double Clamp(double v, double lo, double hi) {
+  return v < lo ? lo : (v > hi ? hi : v);
+}
+
+}  // namespace
+
 class SmsStsServo::Impl {
  public:
-  Impl(uint8_t id) : id_(id) { ids_.push_back(id); };
-
-  Impl(const std::vector<uint8_t>& ids) : ids_(ids) {
-    if (ids.size() == 1) {
-      id_ = ids[0];
-    }
+  explicit Impl(Config cfg)
+      : cfg_(std::move(cfg)), freshness_(kFreshnessTimeout) {
+    if (cfg_.max_speed <= 0.0) cfg_.max_speed = kDefaultMaxSpeed;
   }
 
-  ~Impl() = default;
+  ~Impl() { Disconnect(); }
 
-  bool Connect(std::string dev_name) {
-    if (!sm_st_.begin(1000000, dev_name.c_str())) {
-      XLOG_ERROR("Failed to init sms/sts motor!");
-      return false;
-    }
-    return true;
-  }
-
-  void Disconnect() { sm_st_.end(); }
-
-  void SetSpeed(float step_per_sec) {
-    if (step_per_sec > 2400) step_per_sec = 2400;
-    if (step_per_sec < -2400) step_per_sec = -2400;
-    sm_st_.WriteSpe(id_, step_per_sec, 50);
-  }
-
-  float GetSpeed() {
-    auto speed = sm_st_.ReadSpeed(id_);
-    return speed;
-  }
-
-  void SetPositionOffset(float offset) { pos_cmd_offset_ = offset; }
-
-  void SetPosition(float position) {
-    // map 0-360 to 0-4095
-    position += pos_cmd_offset_;
-    s16 pos = position / 360.0f * 4095;
-    XLOG_INFO_STREAM("Set motor pos: " << pos);
-    sm_st_.WritePosEx(id_, pos, 2400, 50);
-  }
-
-  float GetPosition() {
-    auto pos = sm_st_.ReadPos(id_) / 4095.0f * 360;
-    pos -= pos_cmd_offset_;
-    return pos;
-  }
-
-  bool IsNormal() { return true; }
-
-  SmsStsServo::State GetState() {
-    if (sm_st_.FeedBack(id_) != -1) {
-      state_.position =
-          sm_st_.ReadPos(-1) / 4095.0f * 360;  //-1表示缓冲区数据，以下相同
-      state_.position -= pos_cmd_offset_;
-      state_.speed = sm_st_.ReadSpeed(-1);
-      state_.load = sm_st_.ReadLoad(-1);
-      state_.voltage = sm_st_.ReadVoltage(-1);
-      state_.temperature = sm_st_.ReadTemper(-1);
-      state_.is_moving = sm_st_.ReadMove(-1);
-      state_.current = sm_st_.ReadCurrent(-1);
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    } else {
-      XLOG_WARN("Failed to read motor state");
-    }
-    return state_;
-  }
-
-  bool SetMode(Mode mode, uint32_t timeout_ms) {
-    (void)timeout_ms;
-    if (mode == Mode::kSpeed) {
-      sm_st_.WheelMode(id_);
-      return true;  // was returning false even after successfully setting mode
-    }
-    // Only wheel/speed mode is settable through the vendored SMS_STS wrapper;
-    // report failure rather than silently doing nothing and returning false.
-    return false;
-  }
-
-  bool SetMotorId(uint8_t id) {
-    sm_st_.unLockEprom(id_);
-    int ack = sm_st_.writeByte(id_, SMSBL_ID, id);
-    sm_st_.LockEprom(id);
-    return (ack == 1);
-  }
-
-  bool SetNeutralPosition() {
-    int ack = sm_st_.CalibrationOfs(id_);
-    return (ack == 1);
-  }
-
-  void SetPosition(std::vector<float> positions) {
-    assert(positions.size() == ids_.size());
-    for (int i = 0; i < ids_.size(); i++) {
-      positions[i] += pos_cmd_offset_;
-    }
-    std::vector<s16> pos_vec;
-    std::vector<u16> speed_vec(ids_.size(), 2400);
-    std::vector<u8> acc_vec(ids_.size(), 50);
-    for (int i = 0; i < ids_.size(); i++) {
-      pos_vec.push_back(positions[i] / 360 * 4095);
-    }
-    sm_st_.SyncWritePosEx(ids_.data(), ids_.size(), pos_vec.data(),
-                          speed_vec.data(), acc_vec.data());
-  }
-
-  std::unordered_map<uint8_t, float> GetPositions() {
-    std::unordered_map<uint8_t, float> positions;
-    for (auto id : ids_) {
-      auto pos = sm_st_.ReadPos(id) / 4095.0f * 360;
-      pos -= pos_cmd_offset_;
-      positions[id] = pos;
-    }
-    return positions;
-  }
-
-  std::unordered_map<uint8_t, State> GetStates() {
-    std::unordered_map<uint8_t, State> states;
-    for (auto id : ids_) {
-      State state;
-      if (sm_st_.FeedBack(id) != -1) {
-        state.position =
-            sm_st_.ReadPos(-1) / 4095.0f * 360;  //-1表示缓冲区数据，以下相同
-        state_.position -= pos_cmd_offset_;
-        state.speed = sm_st_.ReadSpeed(-1);
-        state.load = sm_st_.ReadLoad(-1);
-        state.voltage = sm_st_.ReadVoltage(-1);
-        state.temperature = sm_st_.ReadTemper(-1);
-        state.is_moving = sm_st_.ReadMove(-1);
-        state.current = sm_st_.ReadCurrent(-1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  hal::Status Connect() {
+    if (connected_.load()) return hal::Status::kOk;
+    {
+      std::lock_guard<std::mutex> lk(bus_mtx_);
+      if (!sm_st_.begin(cfg_.baud, cfg_.bus.c_str())) {
+        XLOG_ERROR("SmsStsServo(id={}): failed to open '{}'", cfg_.id, cfg_.bus);
+        return hal::Status::kIoError;
       }
-      states[id] = state;
     }
-    return states;
+    freshness_.Reset();
+    connected_.store(true);
+    StartRefresh();
+    XLOG_INFO("SmsStsServo(id={}): connected on '{}'", cfg_.id, cfg_.bus);
+    return hal::Status::kOk;
+  }
+
+  void Disconnect() {
+    if (!connected_.load()) return;
+    Stop();  // command a safe state before tearing down
+    StopRefresh();
+    {
+      std::lock_guard<std::mutex> lk(bus_mtx_);
+      sm_st_.end();
+    }
+    connected_.store(false);
+    freshness_.Reset();
+    XLOG_INFO("SmsStsServo(id={}): disconnected", cfg_.id);
+  }
+
+  bool IsConnected() const { return connected_.load(); }
+
+  hal::DeviceHealth Health() const {
+    auto h = hal::HealthFromFreshness(connected_.load(), freshness_);
+    if (h.state != hal::DeviceHealth::State::kOk) return h;
+    std::lock_guard<std::mutex> lk(snap_mtx_);
+    if (servo_error_ != 0) {
+      return {hal::DeviceHealth::State::kFault,
+              "servo_status=0x" + std::to_string(static_cast<int>(servo_error_))};
+    }
+    if (snap_.temperature >= kOverTempC) {
+      return {hal::DeviceHealth::State::kFault,
+              "over_temp " + std::to_string(static_cast<int>(snap_.temperature)) +
+                  "C"};
+    }
+    return h;
+  }
+
+  hal::Status Stop() {
+    if (!connected_.load()) return hal::Status::kNotConnected;
+    std::lock_guard<std::mutex> lk(bus_mtx_);
+    sm_st_.WriteSpe(cfg_.id, 0, 50);  // zero speed -> safe state
+    return hal::Status::kOk;
+  }
+
+  hal::Status SetPosition(hal::Radian position) {
+    if (!connected_.load()) return hal::Status::kNotConnected;
+    const double rad = position.value();
+    if (!std::isfinite(rad)) return hal::Status::kInvalidArgument;
+    const double target = rad * kRadToDeg + cfg_.position_offset_deg;
+    const double clamped = Clamp(target, 0.0, kMaxPositionDeg);
+    const s16 step = static_cast<s16>(clamped / kMaxPositionDeg * kStepsPerRev);
+    {
+      std::lock_guard<std::mutex> lk(bus_mtx_);
+      sm_st_.WritePosEx(cfg_.id, step, static_cast<u16>(cfg_.max_speed), 50);
+    }
+    return clamped == target ? hal::Status::kOk : hal::Status::kOutOfRange;
+  }
+
+  hal::Result<hal::Radian> GetPosition() const {
+    if (!connected_.load())
+      return hal::Result<hal::Radian>::Err(hal::Status::kNotConnected);
+    if (!freshness_.IsFresh())
+      return hal::Result<hal::Radian>::Err(hal::Status::kTimeout);
+    std::lock_guard<std::mutex> lk(snap_mtx_);
+    return hal::Result<hal::Radian>::Ok(hal::Radian{snap_.position * kDegToRad});
+  }
+
+  hal::Status SetSpeed(hal::Rpm speed) {
+    if (!connected_.load()) return hal::Status::kNotConnected;
+    const double v = speed.value();  // native step/sec
+    if (!std::isfinite(v)) return hal::Status::kInvalidArgument;
+    const double clamped = Clamp(v, -cfg_.max_speed, cfg_.max_speed);
+    {
+      std::lock_guard<std::mutex> lk(bus_mtx_);
+      sm_st_.WriteSpe(cfg_.id, static_cast<s16>(clamped), 50);
+    }
+    return clamped == v ? hal::Status::kOk : hal::Status::kOutOfRange;
+  }
+
+  hal::Result<hal::Rpm> GetSpeed() const {
+    if (!connected_.load())
+      return hal::Result<hal::Rpm>::Err(hal::Status::kNotConnected);
+    if (!freshness_.IsFresh())
+      return hal::Result<hal::Rpm>::Err(hal::Status::kTimeout);
+    std::lock_guard<std::mutex> lk(snap_mtx_);
+    return hal::Result<hal::Rpm>::Ok(hal::Rpm{snap_.speed});
+  }
+
+  hal::Result<State> GetState() const {
+    if (!connected_.load())
+      return hal::Result<State>::Err(hal::Status::kNotConnected);
+    if (!freshness_.IsFresh())
+      return hal::Result<State>::Err(hal::Status::kTimeout);
+    std::lock_guard<std::mutex> lk(snap_mtx_);
+    return hal::Result<State>::Ok(snap_);
+  }
+
+  hal::Status SetMode(Mode mode) {
+    if (!connected_.load()) return hal::Status::kNotConnected;
+    if (mode != Mode::kSpeed) {
+      // Only wheel/speed mode is settable through the vendored wrapper.
+      return hal::Status::kUnsupported;
+    }
+    std::lock_guard<std::mutex> lk(bus_mtx_);
+    return sm_st_.WheelMode(cfg_.id) == 1 ? hal::Status::kOk
+                                          : hal::Status::kIoError;
+  }
+
+  hal::Status SetMotorId(uint8_t id) {
+    if (!connected_.load()) return hal::Status::kNotConnected;
+    std::lock_guard<std::mutex> lk(bus_mtx_);
+    sm_st_.unLockEprom(cfg_.id);
+    const int ack = sm_st_.writeByte(cfg_.id, SMS_STS_ID, id);
+    sm_st_.LockEprom(id);
+    if (ack != 1) return hal::Status::kIoError;
+    cfg_.id = id;
+    return hal::Status::kOk;
+  }
+
+  hal::Status SetNeutralPosition() {
+    if (!connected_.load()) return hal::Status::kNotConnected;
+    std::lock_guard<std::mutex> lk(bus_mtx_);
+    return sm_st_.CalibrationOfs(cfg_.id) == 1 ? hal::Status::kOk
+                                               : hal::Status::kIoError;
   }
 
  private:
-  uint8_t id_ = 0;
-  std::vector<uint8_t> ids_;
-  SMS_STS sm_st_;
-  State state_;
+  void StartRefresh() {
+    refresh_running_.store(true);
+    refresh_thread_ = std::thread([this] { RefreshLoop(); });
+  }
 
-  // motor position command remap
-  float pos_cmd_offset_ = 0.0;
+  void StopRefresh() {
+    refresh_running_.store(false);
+    if (refresh_thread_.joinable()) refresh_thread_.join();
+  }
+
+  // Background feedback acquisition: does the blocking half-duplex reads here,
+  // off the caller's read path, and publishes a cached snapshot.
+  void RefreshLoop() {
+    while (refresh_running_.load()) {
+      State s;
+      uint8_t err = 0;
+      bool ok = false;
+      {
+        std::lock_guard<std::mutex> lk(bus_mtx_);
+        if (sm_st_.FeedBack(cfg_.id) != -1) {
+          s.position = sm_st_.ReadPos(-1) / kStepsPerRev * kMaxPositionDeg -
+                       cfg_.position_offset_deg;
+          s.speed = sm_st_.ReadSpeed(-1);
+          s.load = sm_st_.ReadLoad(-1);
+          s.voltage = sm_st_.ReadVoltage(-1);
+          s.temperature = sm_st_.ReadTemper(-1);
+          s.is_moving = sm_st_.ReadMove(-1) != 0;
+          s.current = sm_st_.ReadCurrent(-1);
+          err = static_cast<uint8_t>(sm_st_.Error);
+          ok = true;
+        }
+      }
+      if (ok) {
+        {
+          std::lock_guard<std::mutex> lk(snap_mtx_);
+          snap_ = s;
+          servo_error_ = err;
+        }
+        freshness_.Mark();
+      }
+      std::this_thread::sleep_for(kPollPeriod);
+    }
+  }
+
+  Config cfg_;
+  SMS_STS sm_st_;
+  mutable std::mutex bus_mtx_;   // serializes all half-duplex bus access
+  mutable std::mutex snap_mtx_;  // guards the cached snapshot
+  State snap_;
+  uint8_t servo_error_ = 0;
+  std::atomic<bool> connected_{false};
+  hal::FreshnessMonitor freshness_;
+
+  std::thread refresh_thread_;
+  std::atomic<bool> refresh_running_{false};
 };
+
 }  // namespace xmotion

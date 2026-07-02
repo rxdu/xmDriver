@@ -15,9 +15,9 @@
 #ifndef ROBOSW_SRC_DRIVER_INCLUDE_VESC_DRIVER_VESC_FRAME_HPP
 #define ROBOSW_SRC_DRIVER_INCLUDE_VESC_DRIVER_VESC_FRAME_HPP
 
-#include <linux/can.h>
-
 #include <cstdint>
+
+#include "xmmu/transport/can_frame.hpp"
 
 namespace xmotion {
 class VescFrame {
@@ -43,13 +43,16 @@ class VescFrame {
 
  public:
   VescFrame() = default;
-  VescFrame(const struct can_frame &frame) : frame_(frame) {};
+  VescFrame(const CanFrame &frame) : frame_(frame) {};
   virtual ~VescFrame() = default;
 
-  struct can_frame GetCanFrame() const { return frame_; }
+  CanFrame GetCanFrame() const { return frame_; }
 
  protected:
-  struct can_frame frame_;
+  // VESC uses 29-bit extended identifiers; `frame_.extended` carries that flag
+  // (the transport re-adds CAN_EFF_FLAG on the wire) so no linux/can.h leaks
+  // into the packet layer.
+  CanFrame frame_;
 };
 }  // namespace xmotion
 

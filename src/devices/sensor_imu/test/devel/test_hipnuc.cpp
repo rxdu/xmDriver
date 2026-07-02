@@ -1,52 +1,52 @@
 /*
- * test_hipnuc.cpp
+ * test_hipnuc.cpp — manual hardware demo for the HiPNUC IMU on the new HAL.
  *
- * Created on: Nov 22, 2021 21:47
- * Description:
+ * Requires a real HiPNUC IMU on the serial port below. Streams samples via the
+ * push callback and prints the observed update rate.
  *
- * Copyright (c) 2021 Ruixiang Du (rdu)
+ * Copyright (c) 2021-2026 Ruixiang Du (rdu)
  */
 
+#include <chrono>
 #include <iostream>
 #include <thread>
-#include <chrono>
 
 #include "sensor_imu/imu_hipnuc.hpp"
 
 using namespace xmotion;
 
+namespace {
 using Clock = std::chrono::steady_clock;
-using TimePoint = Clock::time_point;
+Clock::time_point g_last_update;
 
-TimePoint last_update_time;
-
-void ImuCallback(const ImuData &data) {
-  auto error = Clock::now() - last_update_time;
-  last_update_time = Clock::now();
-
-  std::cout << "Accel: " << data.accel.x << " " << data.accel.y << " "
-            << data.accel.z << " Gyro: " << data.gyro.x << " " << data.gyro.y
-            << " " << data.gyro.z << ", Update rate: "
-            << 1.0f /
-                   std::chrono::duration_cast<std::chrono::microseconds>(error)
-                       .count() *
-                   1000000.0f
-            << std::endl;
+void OnSample(const hal::ImuSample& s) {
+  const auto now = Clock::now();
+  const auto dt =
+      std::chrono::duration_cast<std::chrono::microseconds>(now - g_last_update)
+          .count();
+  g_last_update = now;
+  const double rate = dt > 0 ? 1e6 / static_cast<double>(dt) : 0.0;
+  std::cout << "Accel: " << s.accel.x << " " << s.accel.y << " " << s.accel.z
+            << " Gyro: " << s.gyro.x << " " << s.gyro.y << " " << s.gyro.z
+            << ", Update rate: " << rate << " Hz" << std::endl;
 }
+}  // namespace
 
-int main(int argc, char **argv) {
-  ImuHipnuc imu;
+int main(int argc, char** argv) {
+  ImuHipnuc::Config cfg;
+  cfg.device = (argc > 1) ? argv[1] : "/dev/ttyUSB0";
+  cfg.baud_rate = (argc > 2) ? static_cast<std::uint32_t>(std::stoul(argv[2]))
+                             : 921600;
 
-  imu.SetCallback(ImuCallback);
-  if (!imu.Connect("/dev/ttyUSB0", 921600)) {
-    std::cout << "Failed to open device" << std::endl;
+  ImuHipnuc imu(cfg);
+  imu.SetSampleCallback(OnSample);
+  if (imu.Connect() != hal::Status::kOk) {
+    std::cerr << "Failed to open device " << cfg.device << std::endl;
     return -1;
   }
 
-  uint8_t count = 0;
   while (imu.IsConnected()) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
-
   return 0;
 }

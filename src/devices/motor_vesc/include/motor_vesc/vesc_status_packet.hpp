@@ -15,7 +15,7 @@
 namespace xmotion {
 class VescStatus1Packet : public VescFrame {
  public:
-  VescStatus1Packet(const struct can_frame &frame);
+  VescStatus1Packet(const CanFrame &frame);
 
   float GetRpm() const { return rpm_; };
   float GetCurrent() const { return current_; };
@@ -29,7 +29,7 @@ class VescStatus1Packet : public VescFrame {
 
 class VescStatus2Packet : public VescFrame {
  public:
-  VescStatus2Packet(const struct can_frame &frame);
+  VescStatus2Packet(const CanFrame &frame);
 
   float GetAmpHours() const { return amp_hours_; }
   float GetAmpHoursCharged() const { return amp_hours_charged_; }
@@ -41,7 +41,7 @@ class VescStatus2Packet : public VescFrame {
 
 class VescStatus3Packet : public VescFrame {
  public:
-  VescStatus3Packet(const struct can_frame &frame);
+  VescStatus3Packet(const CanFrame &frame);
 
   float GetWattHours() const { return watt_hours_; }
   float GetWattHoursCharged() const { return watt_hours_charged_; }
@@ -53,7 +53,7 @@ class VescStatus3Packet : public VescFrame {
 
 class VescStatus4Packet : public VescFrame {
  public:
-  VescStatus4Packet(const struct can_frame &frame);
+  VescStatus4Packet(const CanFrame &frame);
 
   float GetTempFET() const { return temp_fet_; }
   float GetTempMotor() const { return temp_motor_; }
@@ -69,7 +69,7 @@ class VescStatus4Packet : public VescFrame {
 
 class VescStatus5Packet : public VescFrame {
  public:
-  VescStatus5Packet(const struct can_frame &frame);
+  VescStatus5Packet(const CanFrame &frame);
 
   int32_t GetTachoValue() const { return tacho_value_; }
   float GetVoltageIn() const { return voltage_in_; }
@@ -81,7 +81,7 @@ class VescStatus5Packet : public VescFrame {
 
 class VescStatus6Packet : public VescFrame {
  public:
-  VescStatus6Packet(const struct can_frame &frame);
+  VescStatus6Packet(const CanFrame &frame);
 
   float GetAdc1() const { return adc_1_; }
   float GetAdc2() const { return adc_2_; }

@@ -24,6 +24,7 @@
 
 #include "xmmu/hal/motor_controller.hpp"
 #include "xmmu/hal/motor_factory.hpp"
+#include "xmmu/hal/freshness.hpp"
 #include "motor_vesc/vesc_can_interface.hpp"
 
 namespace xmotion {
@@ -38,6 +39,9 @@ class VescMotor final : public hal::Motor,
     std::uint8_t id = 0;              // VESC CAN id
     double max_speed_erpm = 0.0;      // |eRPM| envelope; <=0 => default
     double max_current_a = 0.0;       // |A| envelope; <=0 => default
+    // How long since the last VESC status frame before feedback is stale. VESC
+    // status frames are periodic; ~200 ms tolerates several missed frames.
+    double freshness_ms = 200.0;      // <=0 => default
   };
 
   explicit VescMotor(Config cfg);
@@ -66,6 +70,8 @@ class VescMotor final : public hal::Motor,
  private:
   Config cfg_;
   VescCanInterface vesc_;
+  // Marked on every VESC status frame; drives kTimeout reads and stale Health.
+  hal::FreshnessMonitor monitor_;
   bool connected_ = false;
 };
 
