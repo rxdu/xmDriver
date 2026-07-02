@@ -1,6 +1,4 @@
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBMODBUS QUIET IMPORTED_TARGET libmodbus)
-
+# LIBMODBUS_FOUND / PkgConfig::LIBMODBUS are resolved in src/CMakeLists.txt.
 if (LIBMODBUS_FOUND)
   xmmu_add_module(modbus_rtu
       SOURCES src/modbus_rtu_port.cpp

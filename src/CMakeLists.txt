@@ -8,14 +8,16 @@
 # coupling. Each module's own CMakeLists is a single xmmu_add_module() call
 # (see cmake/xmmu_module.cmake), which also creates the xmotion::<module> alias.
 
-# interfaces: device HAL and, as a separate peer layer below it, the transport
-# interfaces (serial / CAN / Modbus contracts).
+# libmodbus is resolved once here (parent scope) so LIBMODBUS_FOUND and the
+# PkgConfig::LIBMODBUS imported target are visible to every module that needs
+# them (transport/modbus_rtu and motor_akelc), regardless of directory nesting.
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBMODBUS QUIET IMPORTED_TARGET libmodbus)
+
+# interfaces (device HAL) + the transport layer (interface + async_port/modbus
+# implementations) grouped under src/transport/.
 add_subdirectory(hal)
 add_subdirectory(transport)
-
-# transport tier: implementations of the transport interfaces
-add_subdirectory(async_port)
-add_subdirectory(modbus_rtu)
 
 # motors tier
 add_subdirectory(motor_akelc)
