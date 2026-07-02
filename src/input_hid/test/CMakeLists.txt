@@ -1,13 +1,6 @@
-#add_executable(test_evdev test_evdev.cpp)
-#target_link_libraries(test_evdev evdev)
-
-add_executable(test_js_event test_js_event.cpp)
-target_link_libraries(test_js_event input_hid)
-
-add_executable(test_kb_event test_kb_event.cpp)
-target_link_libraries(test_kb_event input_hid)
-
-add_executable(test_both_event test_both_event.cpp)
-target_link_libraries(test_both_event input_hid)
+# Note: the former test_js_event / test_kb_event / test_both_event demos used
+# libevent directly (predating HidEventListener). They were removed with the
+# libevent -> epoll change; the feature/ demos exercise the same via the
+# HidEventListener abstraction.
 
 add_subdirectory(feature)
