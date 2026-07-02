@@ -85,9 +85,13 @@ class SmsStsServo::Impl {
   }
 
   bool SetMode(Mode mode, uint32_t timeout_ms) {
+    (void)timeout_ms;
     if (mode == Mode::kSpeed) {
       sm_st_.WheelMode(id_);
+      return true;  // was returning false even after successfully setting mode
     }
+    // Only wheel/speed mode is settable through the vendored SMS_STS wrapper;
+    // report failure rather than silently doing nothing and returning false.
     return false;
   }
 
