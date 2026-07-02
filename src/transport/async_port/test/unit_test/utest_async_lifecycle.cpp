@@ -33,8 +33,8 @@ TEST(AsyncSerialLifecycle, OpenNonexistentPortFailsCleanly) {
 TEST(AsyncSerialLifecycle, SendBeforeOpenIsRejected) {
   auto s = std::make_shared<AsyncSerial>("/dev/xm_nonexistent_tty", 115200);
   const uint8_t data[4] = {1, 2, 3, 4};
-  s->SendBytes(data, sizeof(data));  // must no-op, not crash
-  SUCCEED();
+  // Reports not-open instead of a silent void / crash (ADR 0003).
+  EXPECT_EQ(s->SendBytes(data, sizeof(data)), TransportStatus::kNotOpen);
 }
 
 TEST(AsyncCanLifecycle, OpenNonexistentIfaceFailsCleanly) {
@@ -47,10 +47,10 @@ TEST(AsyncCanLifecycle, OpenNonexistentIfaceFailsCleanly) {
 
 TEST(AsyncCanLifecycle, SendFrameBeforeOpenIsRejected) {
   auto c = std::make_shared<AsyncCAN>("xm_nocan0");
-  struct can_frame f {};
-  f.can_id = 0x123;
-  f.can_dlc = 1;
+  CanFrame f;
+  f.id = 0x123;
+  f.dlc = 1;
   f.data[0] = 0xAB;
-  c->SendFrame(f);  // must no-op (port closed), not crash / UAF
-  SUCCEED();
+  // Reports not-open instead of a silent void / dangling-buffer UAF (ADR 0003).
+  EXPECT_EQ(c->SendFrame(f), TransportStatus::kNotOpen);
 }

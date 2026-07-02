@@ -20,16 +20,18 @@ module built against the interfaces defined by [xmSigma](https://github.com/rxdu
 
 ## Modules
 
-| Module                | Description                                                                 |
-|-----------------------|-----------------------------------------------------------------------------|
-| `src/async_port`      | Asynchronous serial and CAN ports (asio-based) shared by other drivers      |
-| `src/modbus_rtu`      | Modbus-RTU port wrapper built on libmodbus                                   |
-| `src/motor_akelc`     | AKELC motor controller driver (Modbus / CANopen transport)                  |
-| `src/motor_vesc`      | VESC motor controller driver over CAN                                       |
-| `src/motor_waveshare` | Waveshare DDSM-210 hub motors and SMS/STS bus servos                         |
-| `src/sensor_imu`      | HiPNUC serial IMU driver                                                     |
-| `src/input_hid`       | Event/polling joystick and keyboard input (libevent)                        |
-| `src/input_sbus`      | SBUS RC receiver decoder and driver (bundled `rpi_sbus`)                     |
+| Module                        | Description                                                                 |
+|-------------------------------|-----------------------------------------------------------------------------|
+| `src/hal`                     | App-facing device HAL: `Device`/`Motor`, capability mixins, `Status`/`Result<T>`, units, `MotorFactory`, freshness, IMU/RC/joystick/keyboard interfaces |
+| `src/transport/async_port`    | Asynchronous serial and CAN ports (asio) on one shared io_context, bounded TX, health |
+| `src/transport/modbus_rtu`    | Modbus-RTU port wrapper built on libmodbus (RAII)                           |
+| `src/devices/motor_akelc`     | AKELC motor controller driver (Modbus) — `hal::Motor`, factory type `akelc` |
+| `src/devices/motor_vesc`      | VESC motor controller driver over CAN — `hal::Motor`, factory type `vesc`   |
+| `src/devices/motor_waveshare` | Waveshare DDSM-210 hub motors and SMS/STS bus servos — types `ddsm210`/`sms_sts` |
+| `src/devices/motor_registry`  | `RegisterAllMotors()` — one-call factory registration of every bundled motor |
+| `src/devices/sensor_imu`      | HiPNUC serial IMU driver — `hal::Imu`                                        |
+| `src/devices/input_hid`       | Joystick and keyboard input over libevdev — `hal::Joystick` / `hal::Keyboard` |
+| `src/devices/input_sbus`      | SBUS RC receiver decoder and driver — `hal::RcReceiver` (first-party decoder) |
 
 ## Dependency on xmSigma
 
@@ -61,7 +63,7 @@ Key options: `BUILD_TESTING` (build tests, default `OFF`), `STATIC_CHECK` (cppch
 The driver modules link a handful of system libraries (install via apt on Ubuntu):
 
 ```bash
-sudo apt-get install libasio-dev libmodbus-dev libevent-dev
+sudo apt-get install libasio-dev libmodbus-dev libevdev-dev
 ```
 
 Consumers use the aggregate target to pull in every driver module:
@@ -81,5 +83,5 @@ a standalone, independently versioned component of the xMotion family.
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). First-party code only; bundled
-third-party components (e.g. `third_party/rpi_sbus`, `third_party/googletest`) retain their own
-licenses.
+third-party components (e.g. `third_party/googletest`) and vendored device protocols (SCServo,
+ch_serial) retain their own licenses.

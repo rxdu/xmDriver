@@ -13,8 +13,8 @@
 #include <cstdint>
 #include <memory>
 #include <array>
+#include <atomic>
 #include <mutex>
-#include <thread>
 #include <functional>
 
 #include "asio.hpp"
@@ -51,26 +51,21 @@ class AsyncSerial : public std::enable_shared_from_this<AsyncSerial>,
   bool IsOpened() const override;
 
   bool ChangeBaudRate(unsigned baudrate);
-  void SetReceiveCallback(ReceiveCallback cb) override { rcv_cb_ = cb; }
+  void SetReceiveCallback(ReceiveCallback cb) override { rcv_cb_ = std::move(cb); }
+  void SetErrorCallback(ErrorCallback cb) override { err_cb_ = std::move(cb); }
 
-  void SendBytes(const uint8_t *bytes, size_t length) override;
+  TransportStatus SendBytes(const uint8_t *bytes, size_t length) override;
 
  private:
   std::string port_;
-  bool port_opened_ = false;
+  std::atomic<bool> port_opened_{false};
 
-#if ASIO_VERSION < 101200L
-  asio::io_service io_context_;
-#else
-  asio::io_context io_context_;
-#endif
-  std::thread io_thread_;
-
-  // serial port
+  // serial port — runs on the process-wide shared io_context (IoService).
   asio::serial_port serial_port_;
   uint32_t baud_rate_ = 115200;
   bool hwflow_ = false;
   ReceiveCallback rcv_cb_ = nullptr;
+  ErrorCallback err_cb_ = nullptr;
   Parity parity_ = Parity::kNone;
   StopBits stop_bits_ = StopBits::kOne;
 
@@ -82,12 +77,12 @@ class AsyncSerial : public std::enable_shared_from_this<AsyncSerial>,
   std::recursive_mutex tx_mutex_;
   bool tx_in_progress_ = false;
 
-  void DefaultReceiveCallback(uint8_t *data, const size_t bufsize, size_t len);
   void ReadFromPort();
   void WriteToPort(bool check_if_busy);
-  // Non-joining teardown for use from io-thread completion handlers (Close()
-  // joins and must only be called from the owning thread).
-  void HandleError();
+  // I/O-thread teardown from a completion handler (no join): closes the port and
+  // reports the fault via the error callback. Close() (external) synchronizes
+  // with the I/O thread separately.
+  void HandleError(TransportStatus reason);
 };
 }  // namespace xmotion
 

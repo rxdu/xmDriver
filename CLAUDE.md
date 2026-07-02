@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 xmMu is the **μ** host-hardware-driver layer of the xMotion family. It provides host-side drivers
 for the physical devices on a robot:
-- **Motor controllers / servos**: AKELC (Modbus/CANopen), VESC (CAN), Waveshare DDSM-210 hub
+- **Motor controllers / servos**: AKELC (Modbus), VESC (CAN), Waveshare DDSM-210 hub
   motors and SMS/STS bus servos
 - **Transports**: asynchronous serial and CAN ports (`async_port`), Modbus-RTU (`modbus_rtu`)
 - **Sensors**: HiPNUC serial IMU (`sensor_imu`)
@@ -44,10 +44,10 @@ ctest
 - CMake >= 3.10.2, C++17 compiler
 - xmSigma (`xmotion-core`) — found via `find_package` or the bundled `third_party/xmSigma` submodule
 - System libs: `libasio-dev` (async_port/motor_vesc/sensor_imu), `libmodbus-dev` (modbus_rtu/motor_akelc),
-  `libevent-dev` (input_hid)
+  `libevdev-dev` (input_hid)
 
 ```bash
-sudo apt-get install libasio-dev libmodbus-dev libevent-dev
+sudo apt-get install libasio-dev libmodbus-dev libevdev-dev
 ```
 
 ## Architecture
@@ -75,7 +75,7 @@ every module links the same namespaced names regardless of how xmSigma was resol
 ## Conventions
 - **C++ Standard**: C++17. `.cpp` for sources, `.hpp` for headers. Google style, clang-format.
 - **Namespace**: `xmotion`.
-- Preserve per-module third-party finds (libmodbus, libevent, asio) and the `ASIO_ENABLE_OLD_SERVICES`
+- Preserve per-module third-party finds (libmodbus, libevdev, asio) and the `ASIO_ENABLE_OLD_SERVICES`
   / `-fPIC` settings when editing module CMake.
 
 ## License

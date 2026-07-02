@@ -1,68 +1,70 @@
 /*
- * @file sms_sts_servo.cpp
- * @date 10/20/24
- * @brief
+ * sms_sts_servo.cpp
  *
  * @copyright Copyright (c) 2024 Ruixiang Du (rdu)
  */
 
 #include "motor_waveshare/sms_sts_servo.hpp"
 
+// Impl is defined inline here (not compiled as a standalone TU).
 #include "sms_sts_servo_impl.cpp"
 
 namespace xmotion {
-SmsStsServo::SmsStsServo(uint8_t id) : pimpl_(std::make_unique<Impl>(id)) {}
 
-SmsStsServo::SmsStsServo(const std::vector<uint8_t>& ids) {
-  if (ids.empty()) {
-    throw std::invalid_argument("Motor id list is empty");
-  }
-  pimpl_ = std::make_unique<Impl>(ids);
-}
+SmsStsServo::SmsStsServo(Config cfg)
+    : pimpl_(std::make_unique<Impl>(std::move(cfg))) {}
 
 SmsStsServo::~SmsStsServo() = default;
 
-bool SmsStsServo::Connect(std::string dev_name) {
-  return pimpl_->Connect(dev_name);
-}
-
+hal::Status SmsStsServo::Connect() { return pimpl_->Connect(); }
 void SmsStsServo::Disconnect() { pimpl_->Disconnect(); }
+bool SmsStsServo::IsConnected() const { return pimpl_->IsConnected(); }
+hal::DeviceHealth SmsStsServo::Health() const { return pimpl_->Health(); }
 
-void SmsStsServo::SetSpeed(float step_per_sec) {
-  pimpl_->SetSpeed(step_per_sec);
+hal::Status SmsStsServo::Stop() { return pimpl_->Stop(); }
+
+hal::Status SmsStsServo::SetPosition(hal::Radian position) {
+  return pimpl_->SetPosition(position);
+}
+hal::Result<hal::Radian> SmsStsServo::GetPosition() {
+  return pimpl_->GetPosition();
 }
 
-float SmsStsServo::GetSpeed() { return pimpl_->GetSpeed(); }
+hal::Status SmsStsServo::SetSpeed(hal::Rpm speed) {
+  return pimpl_->SetSpeed(speed);
+}
+hal::Result<hal::Rpm> SmsStsServo::GetSpeed() { return pimpl_->GetSpeed(); }
 
-void SmsStsServo::SetPositionOffset(float offset) {
-  pimpl_->SetPositionOffset(offset);
+hal::Result<SmsStsServo::State> SmsStsServo::GetState() const {
+  return pimpl_->GetState();
 }
 
-void SmsStsServo::SetPosition(float position) { pimpl_->SetPosition(position); }
-
-float SmsStsServo::GetPosition() { return pimpl_->GetPosition(); }
-
-bool SmsStsServo::IsNormal() { return pimpl_->IsNormal(); }
-
-SmsStsServo::State SmsStsServo::GetState() const { return pimpl_->GetState(); }
-
-bool SmsStsServo::SetMode(SmsStsServo::Mode mode, uint32_t timeout_ms) {
-  return pimpl_->SetMode(mode, timeout_ms);
+hal::Status SmsStsServo::SetMode(Mode mode) { return pimpl_->SetMode(mode); }
+hal::Status SmsStsServo::SetMotorId(uint8_t id) {
+  return pimpl_->SetMotorId(id);
+}
+hal::Status SmsStsServo::SetNeutralPosition() {
+  return pimpl_->SetNeutralPosition();
 }
 
-bool SmsStsServo::SetMotorId(uint8_t id) { return pimpl_->SetMotorId(id); }
-
-bool SmsStsServo::SetNeutralPosition() { return pimpl_->SetNeutralPosition(); }
-
-void SmsStsServo::SetPosition(std::vector<float> positions) {
-  pimpl_->SetPosition(positions);
+bool RegisterSmsStsServo() {
+  hal::MotorFactory::Instance().Register(
+      "sms_sts", [](const hal::MotorConfig& c) -> std::unique_ptr<hal::Motor> {
+        SmsStsServo::Config sc;
+        sc.bus = c.bus;
+        sc.id = static_cast<std::uint8_t>(c.id);
+        sc.max_speed = c.max_speed_rpm;  // native step/sec envelope
+        auto it = c.params.find("baud");
+        if (it != c.params.end()) sc.baud = std::stoi(it->second);
+        auto off = c.params.find("position_offset_deg");
+        if (off != c.params.end()) sc.position_offset_deg = std::stod(off->second);
+        return std::make_unique<SmsStsServo>(std::move(sc));
+      });
+  return true;
 }
 
-std::unordered_map<uint8_t, float> SmsStsServo::GetPositions() {
-  return pimpl_->GetPositions();
-}
+namespace {
+const bool kSmsStsServoRegistered = RegisterSmsStsServo();
+}  // namespace
 
-std::unordered_map<uint8_t, SmsStsServo::State> SmsStsServo::GetStates() const {
-  return pimpl_->GetStates();
-}
 }  // namespace xmotion

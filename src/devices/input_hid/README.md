@@ -1,19 +1,27 @@
 # HID Device Driver
 
-This module provides driver for the following devices:
+This module provides HAL drivers for the following HID input devices:
 
-- Keyboard
-- JoyStick
+- `xmotion::EvdevKeyboard` — implements `xmotion::hal::Keyboard`
+- `xmotion::EvdevJoystick` — implements `xmotion::hal::Joystick`
 
-Two types of drivers are provided:
+Both are single, event-driven implementations built on **libevdev** (ADR 0002)
+and the canonical `xmotion::hal` device contract (ADR 0001 + 0003):
 
-- Polling driver: Keyboard, Joystick
-- Event-driven driver: (KeyboardHandler, JoystickHandler) + HidEventListener
+- Lifecycle via `Connect()` / `Disconnect()` / `IsConnected()` / `Health()`.
+- `Read()` returns a `Result<T>` snapshot: `kNotConnected` when down, `kTimeout`
+  when the device has stopped reporting within the freshness window, and a real
+  value (buttons/keys + axes normalised to `[-1, 1]` from the device's own abs
+  ranges, plus a `steady_clock` stamp) only when fresh.
+- Event callbacks: `SetButtonCallback` / `SetAxisCallback` (joystick),
+  `SetKeyEventCallback` (keyboard).
+- A hot-unplug is observable: the reader detects the device is gone and
+  `Health()` reports it. There is no inotify hot-plug re-attach.
 
-If you don't care about the performance, both drivers can be used. The polling driver is easier to use and can be used
-for simple use cases. It creates a thread in the background that reads the device and calls the callback function.
-The event-driven driver is more efficient, especially if you need to handle multiple devices. One instance of
-HidEventListener can handle multiple devices.
+Each device runs one background reader thread that waits on the fd with `epoll`
+and drains events with libevdev (including `SYN_DROPPED` resync). The device fd
+is only ever touched on that reader thread, so `Read()`/`Health()` are race-free.
+Construct with the event node path, e.g. `EvdevKeyboard{"/dev/input/event3"}`.
 
 ## Find the device
 

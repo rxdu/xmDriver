@@ -21,7 +21,7 @@ using serialization::load_be16s;  // signed big-endian int16
 using serialization::load_be32s;  // signed big-endian int32
 }  // namespace
 
-VescStatus1Packet::VescStatus1Packet(const struct can_frame &frame)
+VescStatus1Packet::VescStatus1Packet(const CanFrame &frame)
     : VescFrame(frame) {
   // rpm(4 byte), current*10.0(2 byte), duty*1000.0(2 byte)
   rpm_ = load_be32s(&frame.data[0]);
@@ -31,21 +31,21 @@ VescStatus1Packet::VescStatus1Packet(const struct can_frame &frame)
   duty_ = load_be16s(&frame.data[6]) / 1000.0f;
 }
 
-VescStatus2Packet::VescStatus2Packet(const struct can_frame &frame)
+VescStatus2Packet::VescStatus2Packet(const CanFrame &frame)
     : VescFrame(frame) {
   //  amp_hours*10000.0(4 byte), amp_hours_charged*10000.0(4 byte)
   amp_hours_ = load_be32s(&frame.data[0]) / 10000.0f;
   amp_hours_charged_ = load_be32s(&frame.data[4]) / 10000.0f;
 }
 
-VescStatus3Packet::VescStatus3Packet(const struct can_frame &frame)
+VescStatus3Packet::VescStatus3Packet(const CanFrame &frame)
     : VescFrame(frame) {
   // watt_hours*10000.0(4 byte), watt_hours_charged*10000.0(4 byte)
   watt_hours_ = load_be32s(&frame.data[0]) / 10000.0f;
   watt_hours_charged_ = load_be32s(&frame.data[4]) / 10000.0f;
 }
 
-VescStatus4Packet::VescStatus4Packet(const struct can_frame &frame)
+VescStatus4Packet::VescStatus4Packet(const CanFrame &frame)
     : VescFrame(frame) {
   // temp_fet*10.0(2 byte), temp_motor*10.0(2 byte), current_in*10.0(2 byte),
   // pid_pos_now*50.0(2 byte)
@@ -55,13 +55,13 @@ VescStatus4Packet::VescStatus4Packet(const struct can_frame &frame)
   pid_pos_now_ = load_be16s(&frame.data[6]) / 50.0f;
 }
 
-VescStatus5Packet::VescStatus5Packet(const struct can_frame &frame)
+VescStatus5Packet::VescStatus5Packet(const CanFrame &frame)
     : VescFrame(frame) {
   // tacho_value(4 byte), v_in*10.0(2 byte), reserved as 0(2 byte)
   tacho_value_ = load_be32s(&frame.data[0]);
   voltage_in_ = load_be16s(&frame.data[4]) / 10.0f;
 }
 
-VescStatus6Packet::VescStatus6Packet(const struct can_frame &frame)
+VescStatus6Packet::VescStatus6Packet(const CanFrame &frame)
     : VescFrame(frame) {}
 }  // namespace xmotion

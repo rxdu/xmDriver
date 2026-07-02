@@ -26,7 +26,7 @@ add_subdirectory(devices)
 ## ::sensors / ::input) instead of enumerating its component libraries. The
 ## individual module libraries remain available for minimal-dependency consumers.
 xmmu_add_group(transport transport_interface async_port modbus_rtu)
-xmmu_add_group(motors    motor_akelc motor_vesc motor_waveshare)
+xmmu_add_group(motors    motor_akelc motor_vesc motor_waveshare motor_registry)
 xmmu_add_group(sensors   sensor_imu)
 xmmu_add_group(input     input_hid input_sbus)
 

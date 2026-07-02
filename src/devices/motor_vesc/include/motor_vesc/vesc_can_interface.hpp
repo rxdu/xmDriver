@@ -15,12 +15,18 @@
 #include <functional>
 
 #include "xmmu/transport/can_interface.hpp"
+#include "xmmu/transport/can_frame.hpp"
+#include "xmmu/transport/transport_status.hpp"
 #include "motor_vesc/vesc_state.hpp"
 
 namespace xmotion {
 class VescCanInterface {
  public:
   using StateUpdatedCallback = std::function<void(const StampedVescState &)>;
+  // Fired on an asynchronous bus fault (bus-off, interface down, unplug) so an
+  // owner can degrade/fault instead of only discovering a dead link on the next
+  // failed send.
+  using ErrorCallback = std::function<void(TransportStatus)>;
 
  public:
   VescCanInterface() = default;
@@ -31,28 +37,32 @@ class VescCanInterface {
   uint8_t GetVescId() const;
 
   void SetStateUpdatedCallback(StateUpdatedCallback cb);
+  void SetErrorCallback(ErrorCallback cb);
   StampedVescState GetLastState() const;
 
   void RequestFwVersion();
   void RequestState();
   void RequestImuData();
 
-  void SetDutyCycle(double duty_cycle);
-  void SetCurrent(double current);
-  void SetBrake(double brake);
-  void SetSpeed(double speed);
-  void SetPosition(double position);
-  void SetServo(double servo);
+  // Sends return the transport outcome; a failed send is logged and the status
+  // is propagated so the caller can map it onto hal::Status (never swallowed).
+  TransportStatus SetDutyCycle(double duty_cycle);
+  TransportStatus SetCurrent(double current);
+  TransportStatus SetBrake(double brake);
+  TransportStatus SetSpeed(double speed);
+  TransportStatus SetPosition(double position);
+  TransportStatus SetServo(double servo);
 
  private:
   std::shared_ptr<CanInterface> can_;
-  uint8_t vesc_id_;
+  uint8_t vesc_id_ = 0;
 
   mutable std::mutex state_mtx_;
   StampedVescState stamped_state_;
   StateUpdatedCallback state_updated_callback_;
+  ErrorCallback error_callback_;
 
-  void HandleCanFrame(const struct can_frame *frame);
+  void HandleCanFrame(const CanFrame &frame);
 };
 }  // namespace xmotion
 

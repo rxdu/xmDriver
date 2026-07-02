@@ -93,6 +93,17 @@ int ch_imu_data2str(hipnuc_raw_t *raw, char *buf, size_t buf_size)
 
 
 /* parse the payload of a frame and feed into data section */
+/*
+ * Every item is a fixed-size record: one tag byte at p[ofs] followed by its
+ * payload. The outer loop only guarantees `ofs < raw->len` (the tag byte is in
+ * range), NOT that the whole record fits — a truncated or malformed frame would
+ * otherwise read past the payload (e.g. KItemIMUSOL touches ofs+75). Guard each
+ * decode with `ofs + item_size <= raw->len` and bail (resync) if it would not
+ * fit. Valid, complete frames end exactly at raw->len, so this never rejects a
+ * good frame.
+ */
+#define CH_ITEM_FITS(item_size) ((ofs) + (item_size) <= raw->len)
+
 static int parse_data(hipnuc_raw_t *raw)
 {
     int ofs = 0, i = 0;
@@ -103,33 +114,39 @@ static int parse_data(hipnuc_raw_t *raw)
         switch (p[ofs])
         {
         case kItemID:
+            if (!CH_ITEM_FITS(2)) return -1;
             ofs += 2;
             break;
         case kItemAccRaw:
+            if (!CH_ITEM_FITS(7)) return -1;
             raw->imu.acc[0] = (float)I2(p + ofs + 1) / 1000;
             raw->imu.acc[1] = (float)I2(p + ofs + 3) / 1000;
             raw->imu.acc[2] = (float)I2(p + ofs + 5) / 1000;
             ofs += 7;
             break;
         case kItemGyrRaw:
+            if (!CH_ITEM_FITS(7)) return -1;
             raw->imu.gyr[0] = (float)I2(p + ofs + 1) / 10;
             raw->imu.gyr[1] = (float)I2(p + ofs + 3) / 10;
             raw->imu.gyr[2] = (float)I2(p + ofs + 5) / 10;
             ofs += 7;
             break;
         case kItemMagRaw:
+            if (!CH_ITEM_FITS(7)) return -1;
             raw->imu.mag[0] = (float)I2(p + ofs + 1) / 10;
             raw->imu.mag[1] = (float)I2(p + ofs + 3) / 10;
             raw->imu.mag[2] = (float)I2(p + ofs + 5) / 10;
             ofs += 7;
             break;
         case kItemRotationEul:
+            if (!CH_ITEM_FITS(7)) return -1;
             raw->imu.eul[0] = (float)I2(p + ofs + 1) / 100;
             raw->imu.eul[1] = (float)I2(p + ofs + 3) / 100;
             raw->imu.eul[2] = (float)I2(p + ofs + 5) / 10;
             ofs += 7;
             break;
         case kItemRotationQuat:
+            if (!CH_ITEM_FITS(17)) return -1;
             raw->imu.quat[0] = R4(p + ofs + 1);
             raw->imu.quat[1] = R4(p + ofs + 5);
             raw->imu.quat[2] = R4(p + ofs + 9);
@@ -137,11 +154,13 @@ static int parse_data(hipnuc_raw_t *raw)
             ofs += 17;
             break;
         case kItemPressure:
+            if (!CH_ITEM_FITS(5)) return -1;
             raw->imu.prs = R4(p + ofs + 1);
             ofs += 5;
             break;
 
         case KItemIMUSOL:
+            if (!CH_ITEM_FITS(76)) return -1;
             raw->imu.pps_sync_ms = U2(p + ofs + 1);
             raw->imu.temp = U1(p + ofs + 3);
             raw->imu.prs = R4(p + ofs + 4);
@@ -172,6 +191,8 @@ static int parse_data(hipnuc_raw_t *raw)
 
     return 1;
 }
+
+#undef CH_ITEM_FITS
 
 static int decode_ch(hipnuc_raw_t *raw)
 {

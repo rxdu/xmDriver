@@ -27,9 +27,9 @@ VescSetServoPosCmdPacket::VescSetServoPosCmdPacket(uint8_t vesc_id, float pos) {
   ClampCommand(pos, 0.0f, 1.0f);
 
   // convert to can frame
-  frame_.can_id =
-      VescFrame::VescProcessShortBufferCmdFrameId | vesc_id | CAN_EFF_FLAG;
-  frame_.can_dlc = 5;
+  frame_.id = VescFrame::VescProcessShortBufferCmdFrameId | vesc_id;
+  frame_.extended = true;
+  frame_.dlc = 5;
   frame_.data[0] = vesc_id;
   frame_.data[1] = 0x00;  // command type: send
   frame_.data[2] = VescFrame::VescCommSetServoPosId;
@@ -44,8 +44,9 @@ VescSetDutyCycleCmdPacket::VescSetDutyCycleCmdPacket(uint8_t vesc_id,
   ClampCommand(duty, 0.0f, 1.0f);
 
   // convert to can frame
-  frame_.can_id = VescFrame::VescDutyCycleCmdFrameId | vesc_id | CAN_EFF_FLAG;
-  frame_.can_dlc = 4;
+  frame_.id = VescFrame::VescDutyCycleCmdFrameId | vesc_id;
+  frame_.extended = true;
+  frame_.dlc = 4;
   store_be32(&frame_.data[0],
              static_cast<uint32_t>(static_cast<int32_t>(duty * 100000.0f)));
 }
@@ -56,8 +57,9 @@ VescSetCurrentCmdPacket::VescSetCurrentCmdPacket(uint8_t vesc_id,
   ClampCommand(current, 0.0f, 20.0f);
 
   // convert to can frame
-  frame_.can_id = VescFrame::VescCurrentCmdFrameId | vesc_id | CAN_EFF_FLAG;
-  frame_.can_dlc = 4;
+  frame_.id = VescFrame::VescCurrentCmdFrameId | vesc_id;
+  frame_.extended = true;
+  frame_.dlc = 4;
   store_be32(&frame_.data[0],
              static_cast<uint32_t>(static_cast<int32_t>(current * 1000.0f)));
 }
@@ -68,17 +70,18 @@ VescSetCurrentBrakeCmdPacket::VescSetCurrentBrakeCmdPacket(uint8_t vesc_id,
   ClampCommand(current, 0.0f, 20.0f);
 
   // convert to can frame
-  frame_.can_id =
-      VescFrame::VescCurrentBrakeCmdFrameId | vesc_id | CAN_EFF_FLAG;
-  frame_.can_dlc = 4;
+  frame_.id = VescFrame::VescCurrentBrakeCmdFrameId | vesc_id;
+  frame_.extended = true;
+  frame_.dlc = 4;
   store_be32(&frame_.data[0],
              static_cast<uint32_t>(static_cast<int32_t>(current * 1000.0f)));
 }
 
 VescSetRpmCmdPacket::VescSetRpmCmdPacket(uint8_t vesc_id, int32_t rpm) {
   // convert to can frame
-  frame_.can_id = VescFrame::VescRpmCmdFrameId | vesc_id | CAN_EFF_FLAG;
-  frame_.can_dlc = 4;
+  frame_.id = VescFrame::VescRpmCmdFrameId | vesc_id;
+  frame_.extended = true;
+  frame_.dlc = 4;
   store_be32(&frame_.data[0], static_cast<uint32_t>(rpm));
 }
 
@@ -87,8 +90,9 @@ VescSetPositionCmdPacket::VescSetPositionCmdPacket(uint8_t vesc_id, float pos) {
   ClampCommand(pos, 0.0f, 1.0f);
 
   // convert to can frame
-  frame_.can_id = VescFrame::VescPositionCmdFrameId | vesc_id | CAN_EFF_FLAG;
-  frame_.can_dlc = 4;
+  frame_.id = VescFrame::VescPositionCmdFrameId | vesc_id;
+  frame_.extended = true;
+  frame_.dlc = 4;
   store_be32(&frame_.data[0],
              static_cast<uint32_t>(static_cast<int32_t>(pos * 100000.0f)));
 }

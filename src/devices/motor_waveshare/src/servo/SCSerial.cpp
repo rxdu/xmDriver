@@ -192,6 +192,8 @@ void SCSerial::wFlushSCS()
 
 void SCSerial::end()
 {
+	// Close the real descriptor before invalidating it — the original order
+	// (fd = -1; close(fd)) closed -1 and leaked the fd.
+	if (fd >= 0) close(fd);
 	fd = -1;
-	close(fd);
 }
