@@ -20,6 +20,17 @@ TEST(RegisterAllMotors, RegistersEveryBundledType) {
   EXPECT_TRUE(factory.IsRegistered("akelc"));
   EXPECT_TRUE(factory.IsRegistered("ddsm210"));
   EXPECT_TRUE(factory.IsRegistered("sms_sts"));
+  EXPECT_TRUE(factory.IsRegistered("sim"));
+}
+
+TEST(RegisterAllMotors, SimMotorIsConstructibleFromConfig) {
+  RegisterAllMotors();
+  hal::MotorConfig cfg;
+  cfg.type = "sim";
+  cfg.max_speed_rpm = 1000.0;
+  auto motor = hal::MotorFactory::Instance().Create(cfg);
+  ASSERT_NE(motor, nullptr);
+  EXPECT_EQ(motor->Connect(), hal::Status::kOk);
 }
 
 TEST(RegisterAllMotors, UnknownTypeCreatesNull) {

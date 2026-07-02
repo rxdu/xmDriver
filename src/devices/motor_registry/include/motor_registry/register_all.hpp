@@ -18,8 +18,8 @@
 
 namespace xmotion {
 
-// Registers all bundled motor drivers ("vesc", "akelc", "ddsm210", "sms_sts").
-// Idempotent. Returns true.
+// Registers all bundled motor drivers ("vesc", "akelc", "ddsm210", "sms_sts")
+// plus the hardware-free reference "sim" motor. Idempotent. Returns true.
 bool RegisterAllMotors();
 
 }  // namespace xmotion

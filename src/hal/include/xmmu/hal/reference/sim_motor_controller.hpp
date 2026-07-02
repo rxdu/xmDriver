@@ -113,12 +113,20 @@ class SimMotorController final : public Motor,
   double current_a_ = 0.0;
 };
 
-// Self-registration with the factory under "sim" — apps get a working motor via
-// MotorConfig{.type = "sim"} with no driver header included.
-inline const MotorRegistrar kSimMotorRegistrar{
-    "sim", [](const MotorConfig& c) -> std::unique_ptr<Motor> {
-      return std::make_unique<SimMotorController>(c.max_speed_rpm,
-                                                  c.max_current_a);
-    }};
+// Explicit registration under "sim" — the reliable path. RegisterAllMotors()
+// calls this so config-driven construction (MotorConfig{.type = "sim"}) works
+// uniformly with the hardware drivers, regardless of static-init GC.
+inline bool RegisterSimMotor() {
+  MotorFactory::Instance().Register(
+      "sim", [](const MotorConfig& c) -> std::unique_ptr<Motor> {
+        return std::make_unique<SimMotorController>(c.max_speed_rpm,
+                                                    c.max_current_a);
+      });
+  return true;
+}
+
+// Best-effort self-registration for TUs that include this header directly (e.g.
+// the HAL interface tests) without calling RegisterSimMotor(). Idempotent.
+inline const bool kSimMotorRegistered = RegisterSimMotor();
 
 }  // namespace xmotion::hal
