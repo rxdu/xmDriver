@@ -19,17 +19,8 @@ pkg_check_modules(LIBMODBUS QUIET IMPORTED_TARGET libmodbus)
 add_subdirectory(hal)
 add_subdirectory(transport)
 
-# motors tier
-add_subdirectory(motor_akelc)
-add_subdirectory(motor_vesc)
-add_subdirectory(motor_waveshare)
-
-# sensors tier
-add_subdirectory(sensor_imu)
-
-# input tier
-add_subdirectory(input_hid)
-add_subdirectory(input_sbus)
+# device drivers (motors / sensors / input), grouped under src/devices/
+add_subdirectory(devices)
 
 ## Role-tier convenience targets — link a tier (xmotion::transport / ::motors /
 ## ::sensors / ::input) instead of enumerating its component libraries. The
