@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevent-dev
+            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build
       - name: Configure CMake
@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevent-dev
+            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Update submodules
         run: git submodule update --init --recursive
       - name: Create Build Environment
