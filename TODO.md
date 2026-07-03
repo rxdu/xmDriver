@@ -51,5 +51,5 @@ ADR-0003 hardening + HAL-completion effort. `[ ]` todo · `[~]` in progress · `
 - [x] Full suite 123/123 green, incl. under ASan+UBSan with leak detection
 
 ## Downstream (separate effort — NOT in xmDriver)
-- [ ] xmNabla: migrate actuator groups + any IMU/RC/HID consumers to `xmotion::hal`
+- [ ] xmNavigation: migrate actuator groups + any IMU/RC/HID consumers to `xmotion::hal`
       (the legacy interfaces are gone; Assembly CI red until ∇ migrates — ADR 0003)

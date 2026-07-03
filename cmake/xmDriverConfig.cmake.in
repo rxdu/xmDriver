@@ -6,8 +6,8 @@ include(CMakeFindDependencyMacro)
 # Same syntax as find_package
 find_dependency(Threads REQUIRED)
 
-# xmDriver is built on top of xmBase, which provides the xmotion::interface and
-# xmotion::logging targets that every driver module links against.
+# xmDriver is built on top of xmBase, which provides the xmotion::xmBase
+# target that every driver module links against.
 find_dependency(xmBase REQUIRED)
 
 # Any extra setup
