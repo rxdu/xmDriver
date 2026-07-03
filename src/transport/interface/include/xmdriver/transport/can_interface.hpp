@@ -13,8 +13,8 @@
 
 #include <functional>
 
-#include "xmmu/transport/can_frame.hpp"
-#include "xmmu/transport/transport_status.hpp"
+#include "xmdriver/transport/can_frame.hpp"
+#include "xmdriver/transport/transport_status.hpp"
 
 namespace xmotion {
 class CanInterface {

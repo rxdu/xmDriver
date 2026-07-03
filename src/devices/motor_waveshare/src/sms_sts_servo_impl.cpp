@@ -19,8 +19,8 @@
 
 #include "SCServo.h"
 
-#include "xmmu/hal/freshness.hpp"
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmdriver/hal/freshness.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 namespace xmotion {
 namespace {

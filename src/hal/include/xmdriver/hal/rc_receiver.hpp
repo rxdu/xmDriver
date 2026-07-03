@@ -17,8 +17,8 @@
 #include <cstddef>
 #include <functional>
 
-#include "xmmu/hal/device.hpp"
-#include "xmmu/hal/result.hpp"
+#include "xmdriver/hal/device.hpp"
+#include "xmdriver/hal/result.hpp"
 
 namespace xmotion::hal {
 

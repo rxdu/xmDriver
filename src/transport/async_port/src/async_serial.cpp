@@ -17,7 +17,7 @@
 #include <cstring>
 #include <future>
 
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 #include "async_port/io_service.hpp"
 

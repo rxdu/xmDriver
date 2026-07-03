@@ -12,7 +12,7 @@
 #include <functional>
 
 #include "async_port/async_can.hpp"
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 #include "motor_vesc/vesc_cmd_packet.hpp"
 #include "motor_vesc/vesc_status_packet.hpp"
@@ -126,7 +126,7 @@ void VescCanInterface::HandleCanFrame(const CanFrame &frame) {
 
     // Only stamp the state when a frame was actually consumed — don't advance
     // the timestamp (or publish below) for an unmatched/foreign id.
-    if (updated) stamped_state_.time = Now();  // xmsigma/types/time.hpp
+    if (updated) stamped_state_.time = Now();  // xmbase/types/time.hpp
   }
 
   if (updated && state_updated_callback_) {

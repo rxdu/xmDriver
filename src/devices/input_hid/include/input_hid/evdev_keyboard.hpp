@@ -26,7 +26,7 @@
 #include <string>
 
 #include "input_hid/details/keyboard_mapping.hpp"
-#include "xmmu/hal/keyboard.hpp"
+#include "xmdriver/hal/keyboard.hpp"
 
 struct input_event;
 

@@ -12,10 +12,10 @@
 
 #include <cstdint>
 
-#include "xmsigma/types/time.hpp"
+#include "xmbase/types/time.hpp"
 
 namespace xmotion {
-// Deprecated: use the shared xmotion time vocabulary (xmsigma/types/time.hpp).
+// Deprecated: use the shared xmotion time vocabulary (xmbase/types/time.hpp).
 // Kept as aliases for source compatibility.
 using VescClock = Clock;
 using VescTimepoint = Timestamp;
@@ -55,7 +55,7 @@ enum class VescStateUpdatedField {
 };
 
 struct StampedVescState {
-  Timestamp time;  // host monotonic receive time (xmsigma/types/time.hpp)
+  Timestamp time;  // host monotonic receive time (xmbase/types/time.hpp)
   VescStateUpdatedField field;
   VescState state;
 };

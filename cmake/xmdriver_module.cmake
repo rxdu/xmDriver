@@ -1,10 +1,10 @@
-# xmmu_module.cmake — helpers that remove the repeated per-module boilerplate
+# xmdriver_module.cmake — helpers that remove the repeated per-module boilerplate
 # (add_library / include dirs / install / export / alias / test wiring).
 #
 # Global -fPIC comes from CMAKE_POSITION_INDEPENDENT_CODE (set at the top level),
 # so modules no longer set it individually.
 
-# xmmu_add_module(<name>
+# xmdriver_add_module(<name>
 #   [INTERFACE]                      # header-only module (no sources)
 #   [SOURCES <s>...]                 # sources for a STATIC library
 #   [PUBLIC_DEPS <t>...]             # PUBLIC link dependencies
@@ -14,9 +14,9 @@
 # )
 #
 # Creates target <name> and the xmotion::<name> alias, wires the standard
-# include layout (BUILD vs INSTALL interface), installs + exports to xmMuTargets,
+# include layout (BUILD vs INSTALL interface), installs + exports to xmDriverTargets,
 # installs include/, and adds the module's test/ dir when BUILD_TESTS is on.
-function(xmmu_add_module name)
+function(xmdriver_add_module name)
   cmake_parse_arguments(ARG
       "INTERFACE"
       ""
@@ -51,7 +51,7 @@ function(xmmu_add_module name)
   add_library(xmotion::${name} ALIAS ${name})
 
   install(TARGETS ${name}
-      EXPORT xmMuTargets
+      EXPORT xmDriverTargets
       LIBRARY DESTINATION lib
       ARCHIVE DESTINATION lib
       RUNTIME DESTINATION bin
@@ -63,11 +63,11 @@ function(xmmu_add_module name)
   endif ()
 endfunction()
 
-# xmmu_add_group(<name> <dep>...) — an INTERFACE "role tier" convenience target
+# xmdriver_add_group(<name> <dep>...) — an INTERFACE "role tier" convenience target
 # `<name>` (alias / exported as xmotion::<name>) that links the listed component
 # libraries that exist. Lets a consumer depend on a tier instead of enumerating
 # its libs, while the individual libraries remain available for minimal builds.
-function(xmmu_add_group name)
+function(xmdriver_add_group name)
   add_library(${name} INTERFACE)
   foreach (dep ${ARGN})
     if (TARGET ${dep})
@@ -75,5 +75,5 @@ function(xmmu_add_group name)
     endif ()
   endforeach ()
   add_library(xmotion::${name} ALIAS ${name})
-  install(TARGETS ${name} EXPORT xmMuTargets)
+  install(TARGETS ${name} EXPORT xmDriverTargets)
 endfunction()

@@ -18,9 +18,9 @@
 
 #include "gtest/gtest.h"
 
-#include "xmmu/hal/motor_factory.hpp"
-#include "xmmu/transport/serial_interface.hpp"
-#include "xmsigma/serialization/checksum.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
+#include "xmdriver/transport/serial_interface.hpp"
+#include "xmbase/serialization/checksum.hpp"
 
 #include "motor_waveshare/ddsm_210.hpp"
 #include "motor_waveshare/sms_sts_servo.hpp"

@@ -21,11 +21,11 @@
 #include <cstdint>
 #include <functional>
 
-#include "xmsigma/types/geometry.hpp"  // Quaterniond
-#include "xmsigma/types/vector.hpp"    // Vector3f (POD wire-layer vector)
+#include "xmbase/types/geometry.hpp"  // Quaterniond
+#include "xmbase/types/vector.hpp"    // Vector3f (POD wire-layer vector)
 
-#include "xmmu/hal/device.hpp"
-#include "xmmu/hal/result.hpp"
+#include "xmdriver/hal/device.hpp"
+#include "xmdriver/hal/result.hpp"
 
 namespace xmotion::hal {
 

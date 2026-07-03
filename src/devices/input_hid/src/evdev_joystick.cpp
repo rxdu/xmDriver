@@ -14,7 +14,7 @@
 
 #include "input_hid/details/evdev_reader.hpp"
 #include "input_hid/details/evdev_translate.hpp"
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 namespace xmotion {
 

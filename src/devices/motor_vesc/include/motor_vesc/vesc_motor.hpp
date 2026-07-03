@@ -23,9 +23,9 @@
 #include <memory>
 #include <string>
 
-#include "xmmu/hal/motor_controller.hpp"
-#include "xmmu/hal/motor_factory.hpp"
-#include "xmmu/hal/freshness.hpp"
+#include "xmdriver/hal/motor_controller.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
+#include "xmdriver/hal/freshness.hpp"
 #include "motor_vesc/vesc_can_interface.hpp"
 
 namespace xmotion {

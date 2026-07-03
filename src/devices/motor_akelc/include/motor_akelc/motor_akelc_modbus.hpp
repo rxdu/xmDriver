@@ -20,10 +20,10 @@
 #include <memory>
 #include <string>
 
-#include "xmmu/hal/freshness.hpp"
-#include "xmmu/hal/result.hpp"
-#include "xmmu/hal/status.hpp"
-#include "xmmu/transport/modbus_rtu_client.hpp"
+#include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/result.hpp"
+#include "xmdriver/hal/status.hpp"
+#include "xmdriver/transport/modbus_rtu_client.hpp"
 
 namespace xmotion {
 class MotorAkelcModbus final : public ModbusRtuClient {

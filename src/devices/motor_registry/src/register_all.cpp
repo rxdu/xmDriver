@@ -10,7 +10,7 @@
 #include "motor_vesc/vesc_motor.hpp"
 #include "motor_waveshare/ddsm_210.hpp"
 #include "motor_waveshare/sms_sts_servo.hpp"
-#include "xmmu/hal/reference/sim_motor_controller.hpp"
+#include "xmdriver/hal/reference/sim_motor_controller.hpp"
 
 namespace xmotion {
 

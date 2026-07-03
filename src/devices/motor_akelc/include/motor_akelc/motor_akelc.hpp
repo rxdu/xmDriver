@@ -25,9 +25,9 @@
 #include <memory>
 #include <string>
 
-#include "xmmu/hal/motor_controller.hpp"
-#include "xmmu/hal/motor_factory.hpp"
-#include "xmmu/transport/modbus_rtu_interface.hpp"
+#include "xmdriver/hal/motor_controller.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
+#include "xmdriver/transport/modbus_rtu_interface.hpp"
 #include "motor_akelc/motor_akelc_modbus.hpp"
 
 namespace xmotion {

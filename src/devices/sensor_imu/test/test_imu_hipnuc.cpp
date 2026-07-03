@@ -14,7 +14,7 @@
 #include "gtest/gtest.h"
 
 #include "sensor_imu/imu_hipnuc.hpp"
-#include "xmmu/transport/serial_interface.hpp"
+#include "xmdriver/transport/serial_interface.hpp"
 
 using namespace xmotion;
 

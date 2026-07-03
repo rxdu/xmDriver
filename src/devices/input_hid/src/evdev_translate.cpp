@@ -8,7 +8,7 @@
 
 #include <linux/input-event-codes.h>
 
-#include "xmmu/hal/joystick.hpp"
+#include "xmdriver/hal/joystick.hpp"
 
 namespace xmotion::input_hid_detail {
 

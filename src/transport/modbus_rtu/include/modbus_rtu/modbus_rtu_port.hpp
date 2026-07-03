@@ -11,7 +11,7 @@
 
 #include <modbus.h>
 
-#include "xmmu/transport/modbus_rtu_interface.hpp"
+#include "xmdriver/transport/modbus_rtu_interface.hpp"
 
 namespace xmotion {
 class ModbusRtuPort : public ModbusRtuInterface {

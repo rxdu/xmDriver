@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-xmMu is the **μ** host-hardware-driver layer of the xMotion family. It provides host-side drivers
+xmDriver is the **μ** host-hardware-driver layer of the XMotion family. It provides host-side drivers
 for the physical devices on a robot:
 - **Motor controllers / servos**: AKELC (Modbus), VESC (CAN), Waveshare DDSM-210 hub
   motors and SMS/STS bus servos
@@ -12,7 +12,7 @@ for the physical devices on a robot:
 - **Sensors**: HiPNUC serial IMU (`sensor_imu`)
 - **Inputs**: joystick/keyboard HID (`input_hid`), SBUS RC receiver (`input_sbus`)
 
-Each driver is a small static library implemented against the interfaces defined by **xmSigma**
+Each driver is a small static library implemented against the interfaces defined by **xmBase**
 (`xmotion::interface`) and, where it logs, `xmotion::logging`. The code was extracted from the
 `src/driver` tree of `libxmotion` / `xmNabla`.
 
@@ -42,7 +42,7 @@ ctest
 
 **Required:**
 - CMake >= 3.10.2, C++17 compiler
-- xmSigma (`xmotion-core`) — found via `find_package` or the bundled `third_party/xmSigma` submodule
+- xmBase (`xmotion-core`) — found via `find_package` or the bundled `third_party/xmBase` submodule
 - System libs: `libasio-dev` (async_port/motor_vesc/sensor_imu), `libmodbus-dev` (modbus_rtu/motor_akelc),
   `libevdev-dev` (input_hid)
 
@@ -52,25 +52,25 @@ sudo apt-get install libasio-dev libmodbus-dev libevdev-dev
 
 ## Architecture
 
-### xmSigma dependency resolution
+### xmBase dependency resolution
 The top-level `CMakeLists.txt` first calls `find_package(xmotion-core QUIET)`. If that fails it
-falls back to `add_subdirectory(third_party/xmSigma)`. Because the bundled submodule exposes its
+falls back to `add_subdirectory(third_party/xmBase)`. Because the bundled submodule exposes its
 targets under their plain names (`interface`, `logging`) rather than the namespaced imports created
 by `find_package`, the top-level creates `xmotion::interface` / `xmotion::logging` ALIAS targets so
-every module links the same namespaced names regardless of how xmSigma was resolved.
+every module links the same namespaced names regardless of how xmBase was resolved.
 
 ### Module layout
 - Each module lives under `src/<module>/` with `include/`, `src/`, and (most) a `test/` dir.
 - Inter-module links use plain target names within the same build (e.g. `motor_vesc` links
   `async_port`; `input_sbus` links the bundled `rpi_sbus`).
-- xmSigma targets are linked via their namespaced names (`xmotion::interface`, `xmotion::logging`).
+- xmBase targets are linked via their namespaced names (`xmotion::interface`, `xmotion::logging`).
 
 ### Targets and export
-- All modules are exported under `EXPORT xmMuTargets` with `NAMESPACE xmotion::`, yielding
+- All modules are exported under `EXPORT xmDriverTargets` with `NAMESPACE xmotion::`, yielding
   `xmotion::async_port`, `xmotion::motor_vesc`, etc.
-- An aggregate INTERFACE target `xmMu` links all eight modules and is exported as `xmotion::xmMu`
+- An aggregate INTERFACE target `xmDriver` links all eight modules and is exported as `xmotion::xmDriver`
   for consumers that want everything.
-- `find_package(xmMu)` works via the generated `xmMuConfig.cmake`, which `find_dependency(xmotion-core)`.
+- `find_package(xmDriver)` works via the generated `xmDriverConfig.cmake`, which `find_dependency(xmotion-core)`.
 
 ## Conventions
 - **C++ Standard**: C++17. `.cpp` for sources, `.hpp` for headers. Google style, clang-format.

@@ -12,7 +12,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "xmmu/hal/keyboard.hpp"
+#include "xmdriver/hal/keyboard.hpp"
 
 namespace xmotion {
 // Maps Linux evdev key codes to/from the canonical hal::KeyboardCode. Reused by

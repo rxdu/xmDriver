@@ -11,8 +11,8 @@
 #include <cstddef>
 #include <cassert>
 
-#include "xmsigma/logging/xlogger.hpp"
-#include "xmsigma/serialization/checksum.hpp"
+#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/serialization/checksum.hpp"
 
 namespace xmotion {
 namespace {

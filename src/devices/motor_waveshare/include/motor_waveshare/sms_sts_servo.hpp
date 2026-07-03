@@ -28,8 +28,8 @@
 #include <memory>
 #include <string>
 
-#include "xmmu/hal/motor_controller.hpp"
-#include "xmmu/hal/motor_factory.hpp"
+#include "xmdriver/hal/motor_controller.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
 
 namespace xmotion {
 

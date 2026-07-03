@@ -1,6 +1,6 @@
 find_package(Threads REQUIRED)
 
-xmmu_add_module(motor_vesc
+xmdriver_add_module(motor_vesc
     SOURCES
         src/vesc_can_interface.cpp
         src/vesc_status_packet.cpp

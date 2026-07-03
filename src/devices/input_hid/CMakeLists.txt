@@ -5,14 +5,14 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBEVDEV REQUIRED IMPORTED_TARGET libevdev)
 
-xmmu_add_module(input_hid
+xmdriver_add_module(input_hid
     SOURCES
         src/evdev_reader.cpp
         src/evdev_translate.cpp
         src/evdev_joystick.cpp
         src/evdev_keyboard.cpp
         src/keyboard_mapping.cpp
-    PUBLIC_DEPS xmotion::hal xmotion::xmSigma Threads::Threads)
+    PUBLIC_DEPS xmotion::hal xmotion::xmBase Threads::Threads)
 
 # libevdev is an implementation detail (not leaked through any public header),
 # so link it PRIVATE — the macro exposes only PUBLIC_DEPS.

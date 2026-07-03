@@ -20,7 +20,7 @@
 #include <chrono>
 #include <cstdint>
 
-#include "xmmu/hal/device.hpp"
+#include "xmdriver/hal/device.hpp"
 
 namespace xmotion::hal {
 

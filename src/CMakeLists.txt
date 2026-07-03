@@ -4,9 +4,9 @@
 #
 # Every module is an independently-linkable library (xmotion::<module>), so a
 # consumer can pull in only what it needs (dependency minimization). The role
-# tiers and the xmMu aggregate below are conveniences layered on top — not a
-# coupling. Each module's own CMakeLists is a single xmmu_add_module() call
-# (see cmake/xmmu_module.cmake), which also creates the xmotion::<module> alias.
+# tiers and the xmDriver aggregate below are conveniences layered on top — not a
+# coupling. Each module's own CMakeLists is a single xmdriver_add_module() call
+# (see cmake/xmdriver_module.cmake), which also creates the xmotion::<module> alias.
 
 # libmodbus is resolved once here (parent scope) so LIBMODBUS_FOUND and the
 # PkgConfig::LIBMODBUS imported target are visible to every module that needs
@@ -25,17 +25,17 @@ add_subdirectory(devices)
 ## Role-tier convenience targets — link a tier (xmotion::transport / ::motors /
 ## ::sensors / ::input) instead of enumerating its component libraries. The
 ## individual module libraries remain available for minimal-dependency consumers.
-xmmu_add_group(transport transport_interface async_port modbus_rtu)
-xmmu_add_group(motors    motor_akelc motor_vesc motor_waveshare motor_registry)
-xmmu_add_group(sensors   sensor_imu)
-xmmu_add_group(input     input_hid input_sbus)
+xmdriver_add_group(transport transport_interface async_port modbus_rtu)
+xmdriver_add_group(motors    motor_akelc motor_vesc motor_waveshare motor_registry)
+xmdriver_add_group(sensors   sensor_imu)
+xmdriver_add_group(input     input_hid input_sbus)
 
-## Aggregate everything: consumers link a single xmotion::xmMu.
-add_library(xmMu INTERFACE)
-target_link_libraries(xmMu INTERFACE hal transport motors sensors input)
-add_library(xmotion::xmMu ALIAS xmMu)
-install(TARGETS xmMu
-    EXPORT xmMuTargets
+## Aggregate everything: consumers link a single xmotion::xmDriver.
+add_library(xmDriver INTERFACE)
+target_link_libraries(xmDriver INTERFACE hal transport motors sensors input)
+add_library(xmotion::xmDriver ALIAS xmDriver)
+install(TARGETS xmDriver
+    EXPORT xmDriverTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
