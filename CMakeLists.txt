@@ -91,7 +91,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ## xmBase twice when xmDriver is assembled alongside it (e.g. in xmNabla or the
 ## umbrella). Otherwise prefer an installed xmBase, falling back to the bundled
 ## third_party/xmBase submodule so xmDriver still builds standalone out of the box.
-## Either path provides xmotion::interface / xmotion::logging / xmotion::xmBase.
+## Either path provides xmotion::xmBase.
 if (NOT TARGET xmotion::xmBase)
   find_package(xmBase QUIET)
   if (NOT xmBase_FOUND)
