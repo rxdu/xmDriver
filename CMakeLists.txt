@@ -88,7 +88,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ## Foundation dependency: xmBase. If a parent superbuild already provides it
 ## in-tree (xmotion::xmBase exists), use that and skip — this avoids adding
-## xmBase twice when xmDriver is assembled alongside it (e.g. in xmNabla or the
+## xmBase twice when xmDriver is assembled alongside it (e.g. in xmNavigation or the
 ## umbrella). Otherwise prefer an installed xmBase, falling back to the bundled
 ## third_party/xmBase submodule so xmDriver still builds standalone out of the box.
 ## Either path provides xmotion::xmBase.

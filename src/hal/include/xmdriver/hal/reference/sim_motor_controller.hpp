@@ -4,7 +4,7 @@
  * Reference implementation of the new HAL motor interfaces — a hardware-free,
  * dependency-free simulated motor. It exists to (a) prove the interface set is
  * implementable and ergonomic, and (b) serve as a test double so upper-layer
- * code (e.g. xmNabla's actuator groups) can be exercised with no hardware.
+ * code (e.g. xmNavigation's actuator groups) can be exercised with no hardware.
  *
  * It demonstrates the contract the real drivers must follow: commands clamp to
  * the configured safe range and reject non-finite input; reads return Result;

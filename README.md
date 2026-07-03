@@ -12,11 +12,11 @@ The μ layer that talks to motors, sensors and radios over serial, CAN and Modbu
 drivers for the physical devices a robot is built from: brushed/brushless motor controllers and
 servos (over serial, CAN and Modbus-RTU), inertial measurement units, and RC / human-input
 devices (SBUS receivers, joysticks and keyboards). Each driver is a small, independently linkable
-module built against the interfaces defined by [xmBase](https://github.com/rxdu/xmBase).
+module built on the common types and logging provided by [xmBase](https://github.com/rxdu/xmBase).
 
 > Part of the XMotion family — see the [umbrella](https://github.com/rxdu/xmotion). Sibling
-> components include [xmBase](https://github.com/rxdu/xmBase) (foundation: interfaces, logging,
-> common types) and [xmNabla](https://github.com/rxdu/xmNabla) (motion algorithms).
+> components include [xmBase](https://github.com/rxdu/xmBase) (foundation: logging and
+> common types) and [xmNavigation](https://github.com/rxdu/xmNavigation) (motion algorithms).
 
 ## Modules
 
@@ -35,11 +35,15 @@ module built against the interfaces defined by [xmBase](https://github.com/rxdu/
 
 ## Dependency on xmBase
 
-xmDriver builds on **xmBase** (CMake package name `xmotion-core`), which provides the
-`xmotion::interface` and `xmotion::logging` targets. The build resolves it in one of two ways:
+xmDriver builds on **xmBase** (CMake package `xmBase`), which provides the single
+`xmotion::xmBase` target (logging + common types) that every driver module links against. The
+build resolves it in one of three ways, in order:
 
-1. **Installed** — if `find_package(xmotion-core)` succeeds, that installation is used.
-2. **Bundled** — otherwise the build falls back to the `third_party/xmBase` submodule.
+1. **In-tree** — if a parent superbuild already defines `xmotion::xmBase` (e.g. the umbrella
+   assembling xmBase + xmDriver together), that target is reused and no second copy is added.
+2. **Installed** — otherwise, if `find_package(xmBase)` succeeds, that installation is used.
+3. **Bundled** — failing both, the build falls back to the `third_party/xmBase` submodule so
+   xmDriver still builds standalone out of the box.
 
 Initialise the submodules before configuring:
 
@@ -77,7 +81,7 @@ Individual modules are also exported (e.g. `xmotion::motor_vesc`, `xmotion::sens
 
 ## Provenance
 
-This code was extracted from the `src/driver` tree of `libxmotion` / `xmNabla` and repackaged as
+This code was extracted from the `src/driver` tree of `libxmotion` / `xmNavigation` and repackaged as
 a standalone, independently versioned component of the XMotion family.
 
 ## License
