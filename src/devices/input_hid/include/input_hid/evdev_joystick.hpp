@@ -31,7 +31,7 @@
 #include <mutex>
 #include <string>
 
-#include "xmmu/hal/joystick.hpp"
+#include "xmdriver/hal/joystick.hpp"
 
 struct libevdev;
 struct input_event;

@@ -9,7 +9,7 @@
 
 #include "gtest/gtest.h"
 
-#include "xmmu/hal/motor_factory.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
 
 using namespace xmotion;
 

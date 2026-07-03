@@ -14,9 +14,9 @@
 #include <memory>
 #include <functional>
 
-#include "xmmu/transport/can_interface.hpp"
-#include "xmmu/transport/can_frame.hpp"
-#include "xmmu/transport/transport_status.hpp"
+#include "xmdriver/transport/can_interface.hpp"
+#include "xmdriver/transport/can_frame.hpp"
+#include "xmdriver/transport/transport_status.hpp"
 #include "motor_vesc/vesc_state.hpp"
 
 namespace xmotion {

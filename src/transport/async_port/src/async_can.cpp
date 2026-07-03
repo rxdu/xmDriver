@@ -16,7 +16,7 @@
 
 #include <future>
 
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 #include "async_port/io_service.hpp"
 #include "async_port/detail/socketcan_frame.hpp"

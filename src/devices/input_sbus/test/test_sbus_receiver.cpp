@@ -20,7 +20,7 @@
 
 #include "gtest/gtest.h"
 
-#include "xmmu/transport/serial_interface.hpp"
+#include "xmdriver/transport/serial_interface.hpp"
 #include "input_sbus/sbus_receiver.hpp"
 
 using namespace xmotion;

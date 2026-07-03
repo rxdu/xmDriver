@@ -12,7 +12,7 @@
 #include <cstring>
 #include <limits>
 
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 namespace xmotion {
 namespace {

@@ -18,7 +18,7 @@
 #include <cstring>
 #include <utility>
 
-#include "xmsigma/logging/xlogger.hpp"
+#include "xmbase/logging/xlogger.hpp"
 
 namespace xmotion::input_hid_detail {
 namespace {

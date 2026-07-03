@@ -4,7 +4,7 @@
  * Copyright (c) 2026 Ruixiang Du (rdu)
  */
 
-#include "xmmu/hal/freshness.hpp"
+#include "xmdriver/hal/freshness.hpp"
 
 #include <thread>
 

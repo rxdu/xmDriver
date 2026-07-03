@@ -30,9 +30,9 @@
 #include <string>
 #include <thread>
 
-#include "xmmu/hal/freshness.hpp"
-#include "xmmu/hal/rc_receiver.hpp"
-#include "xmmu/transport/serial_interface.hpp"
+#include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/rc_receiver.hpp"
+#include "xmdriver/transport/serial_interface.hpp"
 
 #include "input_sbus/sbus_decoder.hpp"
 

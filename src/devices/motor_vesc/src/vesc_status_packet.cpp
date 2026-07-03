@@ -13,7 +13,7 @@
 
 #include "motor_vesc/vesc_status_packet.hpp"
 
-#include "xmsigma/serialization/byte_order.hpp"
+#include "xmbase/serialization/byte_order.hpp"
 
 namespace xmotion {
 namespace {

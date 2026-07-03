@@ -1,6 +1,6 @@
 # Unit tests for the header-only HAL interface layer (exercised via the
 # reference SimMotorController). Links the bundled GoogleTest and the INTERFACE
-# `hal` target (brings the include path + xmSigma).
+# `hal` target (brings the include path + xmBase).
 add_executable(test_hal_interfaces test_hal_interfaces.cpp)
 target_link_libraries(test_hal_interfaces PRIVATE gtest gmock gtest_main hal)
 gtest_discover_tests(test_hal_interfaces)

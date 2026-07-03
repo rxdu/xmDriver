@@ -18,8 +18,8 @@
 
 #include "gtest/gtest.h"
 
-#include "xmmu/hal/motor_factory.hpp"
-#include "xmmu/hal/reference/sim_motor_controller.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
+#include "xmdriver/hal/reference/sim_motor_controller.hpp"
 
 using namespace xmotion::hal;
 

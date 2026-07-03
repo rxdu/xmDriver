@@ -17,7 +17,7 @@
 
 #include <cstdint>
 
-#include "xmmu/transport/can_frame.hpp"
+#include "xmdriver/transport/can_frame.hpp"
 
 namespace xmotion {
 class VescFrame {

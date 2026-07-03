@@ -25,9 +25,9 @@
 
 #pragma once
 
-#include "xmmu/hal/device.hpp"
-#include "xmmu/hal/result.hpp"
-#include "xmmu/hal/units.hpp"
+#include "xmdriver/hal/device.hpp"
+#include "xmdriver/hal/result.hpp"
+#include "xmdriver/hal/units.hpp"
 
 namespace xmotion::hal {
 

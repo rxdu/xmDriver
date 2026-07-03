@@ -22,8 +22,8 @@
 
 #include "gtest/gtest.h"
 
-#include "xmmu/hal/motor_factory.hpp"
-#include "xmmu/transport/can_interface.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
+#include "xmdriver/transport/can_interface.hpp"
 #include "motor_vesc/vesc_frame.hpp"
 #include "motor_vesc/vesc_motor.hpp"
 

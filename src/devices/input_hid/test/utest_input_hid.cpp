@@ -19,8 +19,8 @@
 
 #include "input_hid/details/evdev_translate.hpp"
 #include "input_hid/details/keyboard_mapping.hpp"
-#include "xmmu/hal/joystick.hpp"
-#include "xmmu/hal/keyboard.hpp"
+#include "xmdriver/hal/joystick.hpp"
+#include "xmdriver/hal/keyboard.hpp"
 
 using namespace xmotion;
 using input_hid_detail::JsAxisIndex;

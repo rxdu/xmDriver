@@ -1,6 +1,6 @@
 find_package(Threads REQUIRED)
 
-xmmu_add_module(motor_waveshare
+xmdriver_add_module(motor_waveshare
     SOURCES
         src/ddsm_210.cpp
         src/ddsm_210_frame.cpp
@@ -11,5 +11,5 @@ xmmu_add_module(motor_waveshare
         src/servo/SMS_STS.cpp
         src/servo/SCS.cpp
         src/servo/SCSerial.cpp
-    PUBLIC_DEPS xmotion::hal xmotion::xmSigma async_port Threads::Threads
+    PUBLIC_DEPS xmotion::hal xmotion::xmBase async_port Threads::Threads
     PRIVATE_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/servo)

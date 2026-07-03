@@ -1,21 +1,21 @@
 <h1 align="center">
-  <img src="docs/xmmu.svg" width="96" alt="xmMu"><br>
-  xmMu&nbsp;·&nbsp;μ
+  <img src="docs/xmdriver.svg" width="96" alt="xmDriver"><br>
+  xmDriver&nbsp;·&nbsp;μ
 </h1>
 
-<p align="center"><b>Host hardware drivers for the xMotion family</b><br>
+<p align="center"><b>Host hardware drivers for the XMotion family</b><br>
 The μ layer that talks to motors, sensors and radios over serial, CAN and Modbus.</p>
 
 ---
 
-`xmMu` is the μ hardware-driver layer of the **xMotion** product family. It provides host-side
+`xmDriver` is the μ hardware-driver layer of the **XMotion** product family. It provides host-side
 drivers for the physical devices a robot is built from: brushed/brushless motor controllers and
 servos (over serial, CAN and Modbus-RTU), inertial measurement units, and RC / human-input
 devices (SBUS receivers, joysticks and keyboards). Each driver is a small, independently linkable
-module built against the interfaces defined by [xmSigma](https://github.com/rxdu/xmSigma).
+module built against the interfaces defined by [xmBase](https://github.com/rxdu/xmBase).
 
-> Part of the xMotion family — see the [umbrella](https://github.com/rxdu/xmotion). Sibling
-> components include [xmSigma](https://github.com/rxdu/xmSigma) (foundation: interfaces, logging,
+> Part of the XMotion family — see the [umbrella](https://github.com/rxdu/xmotion). Sibling
+> components include [xmBase](https://github.com/rxdu/xmBase) (foundation: interfaces, logging,
 > common types) and [xmNabla](https://github.com/rxdu/xmNabla) (motion algorithms).
 
 ## Modules
@@ -33,13 +33,13 @@ module built against the interfaces defined by [xmSigma](https://github.com/rxdu
 | `src/devices/input_hid`       | Joystick and keyboard input over libevdev — `hal::Joystick` / `hal::Keyboard` |
 | `src/devices/input_sbus`      | SBUS RC receiver decoder and driver — `hal::RcReceiver` (first-party decoder) |
 
-## Dependency on xmSigma
+## Dependency on xmBase
 
-xmMu builds on **xmSigma** (CMake package name `xmotion-core`), which provides the
+xmDriver builds on **xmBase** (CMake package name `xmotion-core`), which provides the
 `xmotion::interface` and `xmotion::logging` targets. The build resolves it in one of two ways:
 
 1. **Installed** — if `find_package(xmotion-core)` succeeds, that installation is used.
-2. **Bundled** — otherwise the build falls back to the `third_party/xmSigma` submodule.
+2. **Bundled** — otherwise the build falls back to the `third_party/xmBase` submodule.
 
 Initialise the submodules before configuring:
 
@@ -69,8 +69,8 @@ sudo apt-get install libasio-dev libmodbus-dev libevdev-dev
 Consumers use the aggregate target to pull in every driver module:
 
 ```cmake
-find_package(xmMu REQUIRED)
-target_link_libraries(my_app PRIVATE xmotion::xmMu)
+find_package(xmDriver REQUIRED)
+target_link_libraries(my_app PRIVATE xmotion::xmDriver)
 ```
 
 Individual modules are also exported (e.g. `xmotion::motor_vesc`, `xmotion::sensor_imu`).
@@ -78,7 +78,7 @@ Individual modules are also exported (e.g. `xmotion::motor_vesc`, `xmotion::sens
 ## Provenance
 
 This code was extracted from the `src/driver` tree of `libxmotion` / `xmNabla` and repackaged as
-a standalone, independently versioned component of the xMotion family.
+a standalone, independently versioned component of the XMotion family.
 
 ## License
 

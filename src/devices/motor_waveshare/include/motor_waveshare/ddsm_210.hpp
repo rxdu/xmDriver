@@ -26,10 +26,10 @@
 #include <memory>
 #include <string>
 
-#include "xmmu/hal/freshness.hpp"
-#include "xmmu/hal/motor_controller.hpp"
-#include "xmmu/hal/motor_factory.hpp"
-#include "xmmu/transport/serial_interface.hpp"
+#include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/motor_controller.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
+#include "xmdriver/transport/serial_interface.hpp"
 
 #include "async_port/ring_buffer.hpp"
 #include "motor_waveshare/details/ddsm_210_frame.hpp"

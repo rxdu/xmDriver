@@ -27,7 +27,7 @@
 #include <string>
 #include <thread>
 
-#include "xmmu/hal/status.hpp"
+#include "xmdriver/hal/status.hpp"
 
 // Forward-declared so this header does not leak <libevdev.h> / <linux/input.h>
 // into consumers; the implementation includes them.

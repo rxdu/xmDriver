@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.10.2)
-project(xmMu VERSION 0.1.0)
+project(xmDriver VERSION 0.1.0)
 
 message(STATUS "------------------------------------------------")
 if (PROJECT_NAME STREQUAL CMAKE_PROJECT_NAME)
   set(BUILD_AS_MODULE OFF)
-  message(STATUS "Build xmMu as a standalone project")
+  message(STATUS "Build xmDriver as a standalone project")
 else ()
   set(BUILD_AS_MODULE ON)
-  message(STATUS "Build xmMu as a module")
+  message(STATUS "Build xmDriver as a module")
 endif ()
 message(STATUS "------------------------------------------------")
 
@@ -56,7 +56,7 @@ else ()
 endif ()
 
 if (XMOTION_DEV_MODE)
-  message(STATUS "xmMu development mode enabled")
+  message(STATUS "xmDriver development mode enabled")
 endif ()
 
 ## Choose build type
@@ -77,29 +77,29 @@ if (((NOT BUILD_AS_MODULE) AND BUILD_TESTING) OR XMOTION_DEV_MODE)
   enable_testing()
   include(GoogleTest)
   set(BUILD_TESTS ON)
-  message(STATUS "xmMu tests will be built")
+  message(STATUS "xmDriver tests will be built")
 else ()
   set(BUILD_TESTS OFF)
-  message(STATUS "xmMu tests will not be built")
+  message(STATUS "xmDriver tests will not be built")
 endif ()
 
 ## Enable -fPIC for all targets
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-## Foundation dependency: xmSigma. If a parent superbuild already provides it
-## in-tree (xmotion::xmSigma exists), use that and skip — this avoids adding
-## xmSigma twice when xmMu is assembled alongside it (e.g. in xmNabla or the
-## umbrella). Otherwise prefer an installed xmSigma, falling back to the bundled
-## third_party/xmSigma submodule so xmMu still builds standalone out of the box.
-## Either path provides xmotion::interface / xmotion::logging / xmotion::xmSigma.
-if (NOT TARGET xmotion::xmSigma)
-  find_package(xmSigma QUIET)
-  if (NOT xmSigma_FOUND)
-    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xmSigma/CMakeLists.txt)
-      message(STATUS "xmMu: using bundled third_party/xmSigma")
-      add_subdirectory(third_party/xmSigma)
+## Foundation dependency: xmBase. If a parent superbuild already provides it
+## in-tree (xmotion::xmBase exists), use that and skip — this avoids adding
+## xmBase twice when xmDriver is assembled alongside it (e.g. in xmNabla or the
+## umbrella). Otherwise prefer an installed xmBase, falling back to the bundled
+## third_party/xmBase submodule so xmDriver still builds standalone out of the box.
+## Either path provides xmotion::interface / xmotion::logging / xmotion::xmBase.
+if (NOT TARGET xmotion::xmBase)
+  find_package(xmBase QUIET)
+  if (NOT xmBase_FOUND)
+    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xmBase/CMakeLists.txt)
+      message(STATUS "xmDriver: using bundled third_party/xmBase")
+      add_subdirectory(third_party/xmBase)
     else ()
-      message(FATAL_ERROR "xmMu: xmSigma not found — install xmSigma or init the third_party/xmSigma submodule")
+      message(FATAL_ERROR "xmDriver: xmBase not found — install xmBase or init the third_party/xmBase submodule")
     endif ()
   endif ()
 endif ()
@@ -107,8 +107,8 @@ endif ()
 ## Dependent libraries (googletest for tests, rpi_sbus for input_sbus)
 add_subdirectory(third_party)
 
-## Per-module CMake helpers (xmmu_add_module / xmmu_add_group)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/xmmu_module.cmake)
+## Per-module CMake helpers (xmdriver_add_module / xmdriver_add_group)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/xmdriver_module.cmake)
 
 ## Add source directories
 add_subdirectory(src)
@@ -136,24 +136,24 @@ endforeach ()
 # export target configuration
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    xmMuConfigVersion.cmake
+    xmDriverConfigVersion.cmake
     VERSION "${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_PATCH}"
     COMPATIBILITY SameMajorVersion)
 
-install(EXPORT xmMuTargets
-    FILE xmMuTargets.cmake
+install(EXPORT xmDriverTargets
+    FILE xmDriverTargets.cmake
     NAMESPACE xmotion::
-    DESTINATION lib/cmake/xmMu)
+    DESTINATION lib/cmake/xmDriver)
 
-configure_file(cmake/xmMuConfig.cmake.in xmMuConfig.cmake @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/xmMuConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/xmMuConfigVersion.cmake"
-    DESTINATION lib/cmake/xmMu)
+configure_file(cmake/xmDriverConfig.cmake.in xmDriverConfig.cmake @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/xmDriverConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/xmDriverConfigVersion.cmake"
+    DESTINATION lib/cmake/xmDriver)
 
 # Packaging support
-set(CPACK_DEBIAN_PACKAGE_NAME "libxmotion-mu")
+set(CPACK_DEBIAN_PACKAGE_NAME "libxmotion-driver")
 set(CPACK_PACKAGE_VENDOR "Ruixiang Du")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "xMotion Mu - host hardware drivers for the xMotion family")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "XMotion Mu - host hardware drivers for the XMotion family")
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})

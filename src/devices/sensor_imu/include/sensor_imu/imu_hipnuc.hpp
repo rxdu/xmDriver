@@ -31,9 +31,9 @@
 #include <mutex>
 #include <string>
 
-#include "xmmu/hal/freshness.hpp"
-#include "xmmu/hal/imu.hpp"
-#include "xmmu/transport/serial_interface.hpp"
+#include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/imu.hpp"
+#include "xmdriver/transport/serial_interface.hpp"
 
 namespace xmotion {
 

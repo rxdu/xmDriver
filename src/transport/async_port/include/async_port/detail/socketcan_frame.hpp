@@ -19,7 +19,7 @@
 
 #include <linux/can.h>
 
-#include "xmmu/transport/can_frame.hpp"
+#include "xmdriver/transport/can_frame.hpp"
 
 namespace xmotion {
 namespace async_port_detail {

@@ -15,7 +15,7 @@
 
 #include "gtest/gtest.h"
 
-#include "xmmu/hal/motor_factory.hpp"
+#include "xmdriver/hal/motor_factory.hpp"
 #include "motor_akelc/motor_akelc.hpp"
 #include "motor_akelc/motor_akelc_modbus.hpp"
 
