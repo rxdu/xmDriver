@@ -31,7 +31,9 @@
 #include <mutex>
 #include <string>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmdriver/hal/imu.hpp"
 #include "xmdriver/transport/serial_interface.hpp"
 
@@ -84,6 +86,17 @@ class ImuHipnuc final : public hal::Imu {
   hal::FreshnessMonitor monitor_;
   std::atomic<bool> faulted_{false};
   std::atomic<std::uint64_t> parse_error_count_{0};
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Mutable members are touched from const Health().
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.imu_hipnuc");
+  mutable telemetry::Gauge data_age_ms_ =
+      telemetry::GetGauge("driver.imu_hipnuc.data_age_ms");
+  telemetry::Counter parse_error_metric_ =
+      telemetry::GetCounter("driver.imu_hipnuc.parse_error_count");
+  telemetry::Counter link_fault_metric_ =
+      telemetry::GetCounter("driver.imu_hipnuc.link_fault_count");
+  mutable hal::HealthReporter health_reporter_{"driver.imu_hipnuc"};
 
   // Per-instance HiPNUC parser accumulator (hipnuc_raw_t*, opaque to avoid
   // leaking the vendored ch_serial.h into this public header).

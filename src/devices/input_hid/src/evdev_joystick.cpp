@@ -36,7 +36,11 @@ hal::Status EvdevJoystick::Connect() {
       [this](libevdev* dev) { OnDeviceReady(dev); },
       [this]() {
         connected_.store(false);
-        XM_WARN("EvdevJoystick: device {} disconnected", cfg_.device_path);
+        hot_unplug_metric_.Add();
+        health_reporter_.Update(hal::DeviceHealth::State::kDisconnected,
+                                "hot unplug");
+        XM_WARN_SRC(src_, "EvdevJoystick: device {} disconnected",
+                    cfg_.device_path);
       });
 
   const hal::Status s = reader_->Open();
@@ -45,7 +49,9 @@ hal::Status EvdevJoystick::Connect() {
     return s;
   }
   connected_.store(true);
-  XM_INFO("EvdevJoystick: connected {} ({})", cfg_.device_path, device_name_);
+  health_reporter_.Update(hal::DeviceHealth::State::kOk, "connected");
+  XM_INFO_SRC(src_, "EvdevJoystick: connected {} ({})", cfg_.device_path,
+              device_name_);
   return hal::Status::kOk;
 }
 
@@ -53,9 +59,10 @@ void EvdevJoystick::Disconnect() {
   if (reader_) {
     reader_->Close();
     reader_.reset();
-    XM_INFO("EvdevJoystick: disconnected {}", cfg_.device_path);
+    XM_INFO_SRC(src_, "EvdevJoystick: disconnected {}", cfg_.device_path);
   }
   connected_.store(false);
+  health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
 }
 
 bool EvdevJoystick::IsConnected() const { return connected_.load(); }

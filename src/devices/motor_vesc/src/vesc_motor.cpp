@@ -77,20 +77,21 @@ hal::Status VescMotor::Connect() {
   // An async bus fault (bus-off, interface down, unplug) latches so Health()
   // reports kFault instead of a link that only looks stale.
   vesc_.SetErrorCallback([this](TransportStatus reason) {
-    XM_ERROR("VescMotor: CAN bus fault on vesc {}: {}",
-               static_cast<int>(cfg_.id), ToString(reason));
+    can_fault_metric_.Add();
+    XM_ERROR_SRC(src_, "VescMotor: CAN bus fault on vesc {}: {}",
+                 static_cast<int>(cfg_.id), ToString(reason));
     bus_fault_.store(true);
   });
   const bool opened = injected_can_ ? vesc_.Connect(injected_can_, cfg_.id)
                                     : vesc_.Connect(cfg_.bus, cfg_.id);
   if (!opened) {
-    XM_ERROR("VescMotor: failed to open CAN bus '{}' for vesc {}", cfg_.bus,
-               static_cast<int>(cfg_.id));
+    XM_ERROR_SRC(src_, "VescMotor: failed to open CAN bus '{}' for vesc {}",
+                 cfg_.bus, static_cast<int>(cfg_.id));
     return hal::Status::kIoError;
   }
   connected_ = true;
-  XM_INFO("VescMotor: connected on '{}' vesc {}", cfg_.bus,
-            static_cast<int>(cfg_.id));
+  XM_INFO_SRC(src_, "VescMotor: connected on '{}' vesc {}", cfg_.bus,
+              static_cast<int>(cfg_.id));
   return hal::Status::kOk;
 }
 
@@ -101,7 +102,9 @@ void VescMotor::Disconnect() {
     monitor_.Reset();
     bus_fault_.store(false);
     connected_ = false;
-    XM_INFO("VescMotor: disconnected vesc {}", static_cast<int>(cfg_.id));
+    health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
+    XM_INFO_SRC(src_, "VescMotor: disconnected vesc {}",
+                static_cast<int>(cfg_.id));
   }
 }
 
@@ -113,12 +116,20 @@ hal::DeviceHealth VescMotor::Health() const {
   hal::DeviceHealth health = hal::HealthFromFreshness(connected_, monitor_);
   if (connected_) {
     // A latched async bus fault overrides freshness: the link is known bad.
-    if (bus_fault_.load())
-      return {hal::DeviceHealth::State::kFault, "can bus fault"};
-    const int32_t fault = vesc_.GetLastState().state.fault_code;
-    if (fault != kFaultCodeNone)
-      return {hal::DeviceHealth::State::kFault, FaultToString(fault)};
+    if (bus_fault_.load()) {
+      health = {hal::DeviceHealth::State::kFault, "can bus fault"};
+    } else {
+      const int32_t fault = vesc_.GetLastState().state.fault_code;
+      if (fault != kFaultCodeNone)
+        health = {hal::DeviceHealth::State::kFault, FaultToString(fault)};
+    }
+    // Publish the feedback age already tracked by the freshness monitor.
+    if (monitor_.EverUpdated()) {
+      data_age_ms_.Set(
+          std::chrono::duration<double, std::milli>(monitor_.Age()).count());
+    }
   }
+  health_reporter_.Update(health);  // transitions only; no-op unbound
   return health;
 }
 

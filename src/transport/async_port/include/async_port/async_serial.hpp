@@ -20,6 +20,7 @@
 #include "asio.hpp"
 
 #include "async_port/ring_buffer.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/transport/serial_interface.hpp"
 
 namespace xmotion {
@@ -76,6 +77,18 @@ class AsyncSerial : public std::enable_shared_from_this<AsyncSerial>,
   RingBuffer<uint8_t, rxtx_buffer_size> tx_rbuf_;
   std::recursive_mutex tx_mutex_;
   bool tx_in_progress_ = false;
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Metric names are per-class, not per-port: multiple
+  // AsyncSerial instances share these low-cardinality slots by design.
+  telemetry::EventSource src_ =
+      telemetry::GetEventSource("driver.async_serial");
+  telemetry::Gauge tx_buffer_bytes_ =
+      telemetry::GetGauge("driver.async_serial.tx_buffer_bytes");
+  telemetry::Counter tx_drop_metric_ =
+      telemetry::GetCounter("driver.async_serial.tx_drop_count");
+  telemetry::Counter fault_metric_ =
+      telemetry::GetCounter("driver.async_serial.fault_count");
 
   void ReadFromPort();
   void WriteToPort(bool check_if_busy);

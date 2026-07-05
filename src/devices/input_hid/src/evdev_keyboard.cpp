@@ -32,7 +32,11 @@ hal::Status EvdevKeyboard::Connect() {
       input_hid_detail::EvdevReader::OnReadyFn{},
       [this]() {
         connected_.store(false);
-        XM_WARN("EvdevKeyboard: device {} disconnected", cfg_.device_path);
+        hot_unplug_metric_.Add();
+        health_reporter_.Update(hal::DeviceHealth::State::kDisconnected,
+                                "hot unplug");
+        XM_WARN_SRC(src_, "EvdevKeyboard: device {} disconnected",
+                    cfg_.device_path);
       });
 
   const hal::Status s = reader_->Open();
@@ -42,8 +46,9 @@ hal::Status EvdevKeyboard::Connect() {
   }
 
   connected_.store(true);
-  XM_INFO("EvdevKeyboard: connected {} ({})", cfg_.device_path,
-            reader_->DeviceName());
+  health_reporter_.Update(hal::DeviceHealth::State::kOk, "connected");
+  XM_INFO_SRC(src_, "EvdevKeyboard: connected {} ({})", cfg_.device_path,
+              reader_->DeviceName());
   return hal::Status::kOk;
 }
 
@@ -51,9 +56,10 @@ void EvdevKeyboard::Disconnect() {
   if (reader_) {
     reader_->Close();
     reader_.reset();
-    XM_INFO("EvdevKeyboard: disconnected {}", cfg_.device_path);
+    XM_INFO_SRC(src_, "EvdevKeyboard: disconnected {}", cfg_.device_path);
   }
   connected_.store(false);
+  health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
 }
 
 bool EvdevKeyboard::IsConnected() const { return connected_.load(); }

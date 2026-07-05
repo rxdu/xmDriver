@@ -25,6 +25,7 @@
 #include "asio/posix/basic_stream_descriptor.hpp"
 #include <linux/can.h>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/transport/can_interface.hpp"
 
 namespace xmotion {
@@ -77,6 +78,17 @@ class AsyncCAN : public std::enable_shared_from_this<AsyncCAN>,
   std::deque<struct can_frame> tx_queue_;
   struct can_frame tx_frame_;  // in-flight frame, kept alive for the write
   bool tx_in_progress_ = false;
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Metric names are per-class, not per-port: multiple
+  // AsyncCAN instances share these low-cardinality slots by design.
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.async_can");
+  telemetry::Gauge tx_queue_depth_ =
+      telemetry::GetGauge("driver.async_can.tx_queue_depth");
+  telemetry::Counter tx_drop_metric_ =
+      telemetry::GetCounter("driver.async_can.tx_drop_count");
+  telemetry::Counter fault_metric_ =
+      telemetry::GetCounter("driver.async_can.fault_count");
 
   void ReadFromPort();
   void StartWrite();      // I/O thread: kick the next queued write

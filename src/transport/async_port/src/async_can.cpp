@@ -38,13 +38,14 @@ AsyncCAN::~AsyncCAN() { Close(); }
 bool AsyncCAN::Open() {
   const size_t iface_name_size = port_.size() + 1;
   if (iface_name_size > IFNAMSIZ) {
-    XM_ERROR("CAN interface name too long: {}", port_);
+    XM_ERROR_SRC(src_, "CAN interface name too long: {}", port_);
     return false;
   }
 
   can_fd_ = socket(PF_CAN, SOCK_RAW | SOCK_NONBLOCK, CAN_RAW);
   if (can_fd_ < 0) {
-    XM_ERROR("Failed to open CAN socket on {}: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_, "Failed to open CAN socket on {}: {}", port_,
+                 strerror(errno));
     return false;
   }
 
@@ -52,7 +53,8 @@ bool AsyncCAN::Open() {
   memset(&ifr, 0, sizeof(ifr));
   memcpy(ifr.ifr_name, port_.c_str(), iface_name_size);
   if (ioctl(can_fd_, SIOCGIFINDEX, &ifr) < 0) {
-    XM_ERROR("CAN interface {} not found: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_, "CAN interface {} not found: {}", port_,
+                 strerror(errno));
     ::close(can_fd_);
     can_fd_ = -1;
     return false;
@@ -64,7 +66,8 @@ bool AsyncCAN::Open() {
   addr.can_ifindex = ifr.ifr_ifindex;
   if (bind(can_fd_, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) <
       0) {
-    XM_ERROR("Failed to bind CAN socket on {}: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_, "Failed to bind CAN socket on {}: {}", port_,
+                 strerror(errno));
     ::close(can_fd_);
     can_fd_ = -1;
     return false;
@@ -72,7 +75,7 @@ bool AsyncCAN::Open() {
 
   socketcan_stream_.assign(can_fd_);  // asio owns the fd from here
   port_opened_ = true;
-  XM_INFO("CAN port opened: {}", port_);
+  XM_INFO_SRC(src_, "CAN port opened: {}", port_);
 
   // Arm the read loop on the I/O thread.
   auto self = shared_from_this();
@@ -127,9 +130,11 @@ void AsyncCAN::HandleError(TransportStatus reason) {
     std::lock_guard<std::mutex> lk(tx_mutex_);
     tx_queue_.clear();
     tx_in_progress_ = false;
+    tx_queue_depth_.Set(0.0);
   }
   if (was_open && reason != TransportStatus::kOk) {
-    XM_WARN("CAN port {} faulted: {}", port_, ToString(reason));
+    fault_metric_.Add();
+    XM_WARN_SRC(src_, "CAN port {} faulted: {}", port_, ToString(reason));
     if (err_cb_) err_cb_(reason);
   }
 }
@@ -162,11 +167,13 @@ TransportStatus AsyncCAN::SendFrame(const CanFrame &frame) {
   {
     std::lock_guard<std::mutex> lk(tx_mutex_);
     if (tx_queue_.size() >= kMaxTxQueue) {
-      XM_WARN("CAN TX queue full on {} ({} frames), dropping frame", port_,
-                kMaxTxQueue);
+      tx_drop_metric_.Add();
+      XM_WARN_SRC(src_, "CAN TX queue full on {} ({} frames), dropping frame",
+                  port_, kMaxTxQueue);
       return TransportStatus::kQueueFull;
     }
     tx_queue_.push_back(raw);
+    tx_queue_depth_.Set(static_cast<double>(tx_queue_.size()));
   }
   auto self = shared_from_this();
   asio::post(IoService::Instance().context(), [self] { self->StartWrite(); });
@@ -181,6 +188,7 @@ void AsyncCAN::StartWrite() {
     tx_in_progress_ = true;
     tx_frame_ = tx_queue_.front();
     tx_queue_.pop_front();
+    tx_queue_depth_.Set(static_cast<double>(tx_queue_.size()));
   }
   auto self = shared_from_this();
   socketcan_stream_.async_write_some(

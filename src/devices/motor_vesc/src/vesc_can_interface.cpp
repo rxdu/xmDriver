@@ -18,21 +18,21 @@
 #include "motor_vesc/vesc_status_packet.hpp"
 
 namespace xmotion {
-namespace {
-// Send a command frame, log any transport failure, and hand the status back so
-// the caller can map it onto hal::Status. A send is never silently dropped.
-TransportStatus SendCmd(const std::shared_ptr<CanInterface> &can,
-                        uint8_t vesc_id, const CanFrame &frame,
-                        const char *what) {
-  if (can == nullptr || !can->IsOpened()) return TransportStatus::kNotOpen;
-  const TransportStatus st = can->SendFrame(frame);
+
+// Send a command frame, count+log any transport failure, and hand the status
+// back so the caller can map it onto hal::Status. A send is never silently
+// dropped.
+TransportStatus VescCanInterface::SendCmd(const CanFrame &frame,
+                                          const char *what) {
+  if (can_ == nullptr || !can_->IsOpened()) return TransportStatus::kNotOpen;
+  const TransportStatus st = can_->SendFrame(frame);
   if (st != TransportStatus::kOk) {
-    XM_WARN("VescCanInterface: {} send failed on vesc {}: {}", what,
-              static_cast<int>(vesc_id), ToString(st));
+    tx_error_metric_.Add();
+    XM_WARN_SRC(src_, "VescCanInterface: {} send failed on vesc {}: {}", what,
+                static_cast<int>(vesc_id_), ToString(st));
   }
   return st;
 }
-}  // namespace
 
 bool VescCanInterface::Connect(const std::string &can, uint8_t vesc_id) {
   return Connect(std::make_shared<AsyncCAN>(can), vesc_id);
@@ -48,8 +48,8 @@ bool VescCanInterface::Connect(std::shared_ptr<CanInterface> can,
   // Observe async bus faults: log, then forward to any owner-installed handler
   // so the driver can mark itself degraded/faulted.
   can_->SetErrorCallback([this](TransportStatus reason) {
-    XM_ERROR("VescCanInterface: CAN bus fault on vesc {}: {}",
-               static_cast<int>(vesc_id_), ToString(reason));
+    XM_ERROR_SRC(src_, "VescCanInterface: CAN bus fault on vesc {}: {}",
+                 static_cast<int>(vesc_id_), ToString(reason));
     if (error_callback_) error_callback_(reason);
   });
   return can_->Open();
@@ -150,37 +150,32 @@ void VescCanInterface::RequestImuData() {
 }
 
 TransportStatus VescCanInterface::SetDutyCycle(double duty_cycle) {
-  return SendCmd(can_, vesc_id_,
-                 VescSetDutyCycleCmdPacket(vesc_id_, duty_cycle).GetCanFrame(),
+  return SendCmd(VescSetDutyCycleCmdPacket(vesc_id_, duty_cycle).GetCanFrame(),
                  "SetDutyCycle");
 }
 
 TransportStatus VescCanInterface::SetCurrent(double current) {
-  return SendCmd(can_, vesc_id_,
-                 VescSetCurrentCmdPacket(vesc_id_, current).GetCanFrame(),
+  return SendCmd(VescSetCurrentCmdPacket(vesc_id_, current).GetCanFrame(),
                  "SetCurrent");
 }
 
 TransportStatus VescCanInterface::SetBrake(double brake) {
-  return SendCmd(can_, vesc_id_,
-                 VescSetCurrentBrakeCmdPacket(vesc_id_, brake).GetCanFrame(),
+  return SendCmd(VescSetCurrentBrakeCmdPacket(vesc_id_, brake).GetCanFrame(),
                  "SetBrake");
 }
 
 TransportStatus VescCanInterface::SetSpeed(double speed) {
-  return SendCmd(can_, vesc_id_,
-                 VescSetRpmCmdPacket(vesc_id_, speed).GetCanFrame(), "SetSpeed");
+  return SendCmd(VescSetRpmCmdPacket(vesc_id_, speed).GetCanFrame(),
+                 "SetSpeed");
 }
 
 TransportStatus VescCanInterface::SetPosition(double position) {
-  return SendCmd(can_, vesc_id_,
-                 VescSetPositionCmdPacket(vesc_id_, position).GetCanFrame(),
+  return SendCmd(VescSetPositionCmdPacket(vesc_id_, position).GetCanFrame(),
                  "SetPosition");
 }
 
 TransportStatus VescCanInterface::SetServo(double servo) {
-  return SendCmd(can_, vesc_id_,
-                 VescSetServoPosCmdPacket(vesc_id_, servo).GetCanFrame(),
+  return SendCmd(VescSetServoPosCmdPacket(vesc_id_, servo).GetCanFrame(),
                  "SetServo");
 }
 }  // namespace xmotion

@@ -39,7 +39,9 @@ hal::Status SbusReceiver::Connect() {
   };
   auto on_error = [this](TransportStatus st) {
     transport_faulted_ = true;
-    XM_ERROR("SBUS transport fault on {}: {}", port_, static_cast<int>(st));
+    transport_fault_metric_.Add();
+    XM_ERROR_SRC(src_, "SBUS transport fault on {}: {}", port_,
+                 static_cast<int>(st));
   };
 
   if (owns_transport_) {
@@ -51,11 +53,11 @@ hal::Status SbusReceiver::Connect() {
     serial->SetReceiveCallback(on_bytes);
     serial->SetErrorCallback(on_error);
     if (!serial->Open()) {
-      XM_ERROR("SBUS: failed to open serial port {}", port_);
+      XM_ERROR_SRC(src_, "SBUS: failed to open serial port {}", port_);
       return hal::Status::kIoError;
     }
     if (!serial->ChangeBaudRate(kSbusBaud)) {
-      XM_ERROR("SBUS: failed to set {} baud on {}", kSbusBaud, port_);
+      XM_ERROR_SRC(src_, "SBUS: failed to set {} baud on {}", kSbusBaud, port_);
       serial->Close();
       return hal::Status::kIoError;
     }
@@ -65,7 +67,7 @@ hal::Status SbusReceiver::Connect() {
     serial_->SetReceiveCallback(on_bytes);
     serial_->SetErrorCallback(on_error);
     if (!serial_->Open()) {
-      XM_ERROR("SBUS: failed to open injected serial transport");
+      XM_ERROR_SRC(src_, "SBUS: failed to open injected serial transport");
       return hal::Status::kIoError;
     }
   }
@@ -87,7 +89,7 @@ hal::Status SbusReceiver::Connect() {
     }
   });
 
-  XM_INFO("SBUS receiver connected on {}", port_);
+  XM_INFO_SRC(src_, "SBUS receiver connected on {}", port_);
   return hal::Status::kOk;
 }
 
@@ -98,6 +100,7 @@ void SbusReceiver::Disconnect() {
   if (owns_transport_) serial_.reset();
   connected_ = false;
   freshness_.Reset();
+  health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
 }
 
 bool SbusReceiver::IsConnected() const {
@@ -106,20 +109,26 @@ bool SbusReceiver::IsConnected() const {
 
 hal::DeviceHealth SbusReceiver::Health() const {
   hal::DeviceHealth h = hal::HealthFromFreshness(IsConnected(), freshness_);
-  if (!IsConnected()) return h;
-
-  if (transport_faulted_)
-    return {hal::DeviceHealth::State::kFault, "transport fault"};
-
-  // A fresh frame can still carry a receiver fault/loss flag — surface it.
-  if (h.state == hal::DeviceHealth::State::kOk) {
-    std::lock_guard<std::mutex> lock(frame_mtx_);
-    if (last_frame_.failsafe)
-      return {hal::DeviceHealth::State::kFault, "receiver failsafe"};
-    if (last_frame_.frame_loss)
-      return {hal::DeviceHealth::State::kDegraded, "frame loss"};
+  if (IsConnected()) {
+    if (transport_faulted_) {
+      h = {hal::DeviceHealth::State::kFault, "transport fault"};
+    } else if (h.state == hal::DeviceHealth::State::kOk) {
+      // A fresh frame can still carry a receiver fault/loss flag — surface it.
+      std::lock_guard<std::mutex> lock(frame_mtx_);
+      if (last_frame_.failsafe)
+        h = {hal::DeviceHealth::State::kFault, "receiver failsafe"};
+      else if (last_frame_.frame_loss)
+        h = {hal::DeviceHealth::State::kDegraded, "frame loss"};
+    }
+    // else: kDegraded "stale/no data" already means link loss.
+    // Publish the frame age already tracked by the freshness monitor.
+    if (freshness_.EverUpdated()) {
+      data_age_ms_.Set(
+          std::chrono::duration<double, std::milli>(freshness_.Age()).count());
+    }
   }
-  return h;  // kDegraded "stale/no data" already means link loss
+  health_reporter_.Update(h);  // transitions only; no-op without a backend
+  return h;
 }
 
 hal::Result<hal::RcFrame> SbusReceiver::Read() {
@@ -162,7 +171,8 @@ void SbusReceiver::OnBytes(uint8_t* data, std::size_t /*bufsize*/,
 }
 
 void SbusReceiver::EmitFailsafe() {
-  hal::RcFrame frame;  // channels default to 0
+  failsafe_metric_.Add();  // one per watchdog-emitted failsafe frame
+  hal::RcFrame frame;      // channels default to 0
   frame.frame_loss = true;
   frame.failsafe = true;
   frame.stamp = std::chrono::steady_clock::now();

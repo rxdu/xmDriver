@@ -31,6 +31,8 @@
 #include <mutex>
 #include <string>
 
+#include "xmbase/telemetry/telemetry.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmdriver/hal/joystick.hpp"
 
 struct libevdev;
@@ -87,6 +89,15 @@ class EvdevJoystick final : public hal::Joystick {
   AxisCallback axis_cb_;
 
   std::atomic<bool> connected_{false};
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Health transitions are reported where connected_
+  // changes (Connect/Disconnect/hot-unplug), never per-sample.
+  telemetry::EventSource src_ =
+      telemetry::GetEventSource("driver.evdev_joystick");
+  telemetry::Counter hot_unplug_metric_ =
+      telemetry::GetCounter("driver.evdev_joystick.hot_unplug_count");
+  hal::HealthReporter health_reporter_{"driver.evdev_joystick"};
 };
 
 }  // namespace xmotion

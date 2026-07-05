@@ -30,7 +30,9 @@
 #include <string>
 #include <thread>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmdriver/hal/rc_receiver.hpp"
 #include "xmdriver/transport/serial_interface.hpp"
 
@@ -96,6 +98,17 @@ class SbusReceiver : public hal::RcReceiver {
 
   std::atomic_bool keep_running_{false};
   std::thread watchdog_;
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Mutable members are touched from const Health().
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.sbus");
+  mutable telemetry::Gauge data_age_ms_ =
+      telemetry::GetGauge("driver.sbus.data_age_ms");
+  telemetry::Counter transport_fault_metric_ =
+      telemetry::GetCounter("driver.sbus.transport_fault_count");
+  telemetry::Counter failsafe_metric_ =
+      telemetry::GetCounter("driver.sbus.failsafe_count");
+  mutable hal::HealthReporter health_reporter_{"driver.sbus"};
 };
 }  // namespace xmotion
 

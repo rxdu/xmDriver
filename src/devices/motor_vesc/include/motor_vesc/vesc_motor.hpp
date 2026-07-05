@@ -23,9 +23,11 @@
 #include <memory>
 #include <string>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/hal/motor_controller.hpp"
 #include "xmdriver/hal/motor_factory.hpp"
 #include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "motor_vesc/vesc_can_interface.hpp"
 
 namespace xmotion {
@@ -84,6 +86,15 @@ class VescMotor final : public hal::Motor,
   // Health() reports kFault instead of only a stale/degraded read. Atomic
   // because it is written off the control thread.
   std::atomic<bool> bus_fault_{false};
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Mutable members are touched from const Health().
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.vesc");
+  mutable telemetry::Gauge data_age_ms_ =
+      telemetry::GetGauge("driver.vesc.data_age_ms");
+  telemetry::Counter can_fault_metric_ =
+      telemetry::GetCounter("driver.vesc.can_fault_count");
+  mutable hal::HealthReporter health_reporter_{"driver.vesc"};
 };
 
 // Explicit registration for static-library linkage (a static self-registrar can

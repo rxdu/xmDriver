@@ -11,6 +11,7 @@
 
 #include <modbus.h>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/transport/modbus_rtu_interface.hpp"
 
 namespace xmotion {
@@ -63,8 +64,16 @@ class ModbusRtuPort : public ModbusRtuInterface {
 
  private:
   bool SelectDevice(uint8_t device_id) override;
+  // Funnel for all libmodbus read/write returns: counts failures (ret < 0) on
+  // the shared per-class error counter, then passes the value through.
+  int CountIfError(int ret);
 
   modbus_t* ctx_ = nullptr;
+
+  // Telemetry (observability only; handle registered once, no-op when no
+  // backend is bound). Per-class metric shared by all ModbusRtuPort instances.
+  telemetry::Counter io_error_metric_ =
+      telemetry::GetCounter("driver.modbus_rtu.io_error_count");
 };
 }  // namespace xmotion
 
