@@ -9,7 +9,7 @@
 #include <cmath>
 
 #include "async_port/async_serial.hpp"
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 extern "C" {
 #include "ch_serial.h"
@@ -87,12 +87,12 @@ hal::Status ImuHipnuc::Connect() {
       std::bind(&ImuHipnuc::OnSerialError, this, std::placeholders::_1));
 
   if (!serial_->Open() || !serial_->IsOpened()) {
-    XLOG_ERROR("ImuHipnuc: failed to open serial device {} @ {} baud",
+    XM_ERROR("ImuHipnuc: failed to open serial device {} @ {} baud",
                cfg_.device, cfg_.baud_rate);
     return hal::Status::kIoError;
   }
 
-  XLOG_INFO("ImuHipnuc: connected on {} @ {} baud", cfg_.device,
+  XM_INFO("ImuHipnuc: connected on {} @ {} baud", cfg_.device,
             cfg_.baud_rate);
   return hal::Status::kOk;
 }
@@ -100,7 +100,7 @@ hal::Status ImuHipnuc::Connect() {
 void ImuHipnuc::Disconnect() {
   if (serial_ && serial_->IsOpened()) {
     serial_->Close();
-    XLOG_INFO("ImuHipnuc: disconnected from {}", cfg_.device);
+    XM_INFO("ImuHipnuc: disconnected from {}", cfg_.device);
   }
   monitor_.Reset();
   faulted_.store(false, std::memory_order_release);
@@ -155,7 +155,7 @@ void ImuHipnuc::OnSerialData(std::uint8_t *data, std::size_t /*bufsize*/,
       // drop it: count and log so a flaky link is observable.
       const std::uint64_t n =
           parse_error_count_.fetch_add(1, std::memory_order_relaxed) + 1;
-      XLOG_DEBUG("ImuHipnuc: parse error on {} (total {})", cfg_.device, n);
+      XM_DEBUG("ImuHipnuc: parse error on {} (total {})", cfg_.device, n);
     }
     // rc == 0: frame still accumulating; nothing to do.
   }
@@ -163,7 +163,7 @@ void ImuHipnuc::OnSerialData(std::uint8_t *data, std::size_t /*bufsize*/,
 
 void ImuHipnuc::OnSerialError(TransportStatus status) {
   faulted_.store(true, std::memory_order_release);
-  XLOG_ERROR("ImuHipnuc: serial link fault on {}: {}", cfg_.device,
+  XM_ERROR("ImuHipnuc: serial link fault on {}: {}", cfg_.device,
              ToString(status));
 }
 

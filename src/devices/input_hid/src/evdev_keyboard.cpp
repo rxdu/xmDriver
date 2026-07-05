@@ -12,7 +12,7 @@
 #include <utility>
 
 #include "input_hid/details/evdev_reader.hpp"
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 
@@ -32,7 +32,7 @@ hal::Status EvdevKeyboard::Connect() {
       input_hid_detail::EvdevReader::OnReadyFn{},
       [this]() {
         connected_.store(false);
-        XLOG_WARN("EvdevKeyboard: device {} disconnected", cfg_.device_path);
+        XM_WARN("EvdevKeyboard: device {} disconnected", cfg_.device_path);
       });
 
   const hal::Status s = reader_->Open();
@@ -42,7 +42,7 @@ hal::Status EvdevKeyboard::Connect() {
   }
 
   connected_.store(true);
-  XLOG_INFO("EvdevKeyboard: connected {} ({})", cfg_.device_path,
+  XM_INFO("EvdevKeyboard: connected {} ({})", cfg_.device_path,
             reader_->DeviceName());
   return hal::Status::kOk;
 }
@@ -51,7 +51,7 @@ void EvdevKeyboard::Disconnect() {
   if (reader_) {
     reader_->Close();
     reader_.reset();
-    XLOG_INFO("EvdevKeyboard: disconnected {}", cfg_.device_path);
+    XM_INFO("EvdevKeyboard: disconnected {}", cfg_.device_path);
   }
   connected_.store(false);
 }

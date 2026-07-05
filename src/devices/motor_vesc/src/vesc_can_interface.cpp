@@ -12,7 +12,7 @@
 #include <functional>
 
 #include "async_port/async_can.hpp"
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 #include "motor_vesc/vesc_cmd_packet.hpp"
 #include "motor_vesc/vesc_status_packet.hpp"
@@ -27,7 +27,7 @@ TransportStatus SendCmd(const std::shared_ptr<CanInterface> &can,
   if (can == nullptr || !can->IsOpened()) return TransportStatus::kNotOpen;
   const TransportStatus st = can->SendFrame(frame);
   if (st != TransportStatus::kOk) {
-    XLOG_WARN("VescCanInterface: {} send failed on vesc {}: {}", what,
+    XM_WARN("VescCanInterface: {} send failed on vesc {}: {}", what,
               static_cast<int>(vesc_id), ToString(st));
   }
   return st;
@@ -48,7 +48,7 @@ bool VescCanInterface::Connect(std::shared_ptr<CanInterface> can,
   // Observe async bus faults: log, then forward to any owner-installed handler
   // so the driver can mark itself degraded/faulted.
   can_->SetErrorCallback([this](TransportStatus reason) {
-    XLOG_ERROR("VescCanInterface: CAN bus fault on vesc {}: {}",
+    XM_ERROR("VescCanInterface: CAN bus fault on vesc {}: {}",
                static_cast<int>(vesc_id_), ToString(reason));
     if (error_callback_) error_callback_(reason);
   });

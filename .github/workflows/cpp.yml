@@ -22,13 +22,13 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+            libeigen3-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Create Build Environment
         run: cmake -E make_directory ${{runner.workspace}}/build
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DXMOTION_WERROR=ON
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
@@ -44,7 +44,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+            libeigen3-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Update submodules
         run: git submodule update --init --recursive
       - name: Create Build Environment
@@ -52,7 +52,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DXMOTION_WERROR=ON
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
@@ -74,11 +74,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+            libeigen3-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Configure CMake (ASan + UBSan)
         run: |
           cmake -B ${{runner.workspace}}/build-asan -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_TESTING=ON \
+            -DBUILD_TESTING=ON -DXMOTION_WERROR=ON \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
       - name: Build
@@ -103,12 +103,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+            libeigen3-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Configure CMake (TSan)
         run: |
           cmake -B ${{runner.workspace}}/build-tsan -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_TESTING=ON \
-            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g" \
+            -DBUILD_TESTING=ON -DXMOTION_WERROR=ON \
+            -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g -Wno-error=tsan" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
       - name: Build
         run: cmake --build ${{runner.workspace}}/build-tsan
@@ -129,11 +129,11 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev lcov
+            libeigen3-dev libasio-dev libmodbus-dev libevdev-dev lcov
       - name: Configure CMake (coverage)
         run: |
           cmake -B ${{runner.workspace}}/build-cov -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_TESTING=ON \
+            -DBUILD_TESTING=ON -DXMOTION_WERROR=ON \
             -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
             -DCMAKE_EXE_LINKER_FLAGS="--coverage"
       - name: Build
@@ -154,7 +154,7 @@ jobs:
           genhtml coverage.filtered.info --output-directory coverage-html \
             --ignore-errors source 2>/dev/null || true
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-html
           path: ${{runner.workspace}}/build-cov/coverage-html

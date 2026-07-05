@@ -14,7 +14,7 @@
 
 #include "input_hid/details/evdev_reader.hpp"
 #include "input_hid/details/evdev_translate.hpp"
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 
@@ -36,7 +36,7 @@ hal::Status EvdevJoystick::Connect() {
       [this](libevdev* dev) { OnDeviceReady(dev); },
       [this]() {
         connected_.store(false);
-        XLOG_WARN("EvdevJoystick: device {} disconnected", cfg_.device_path);
+        XM_WARN("EvdevJoystick: device {} disconnected", cfg_.device_path);
       });
 
   const hal::Status s = reader_->Open();
@@ -45,7 +45,7 @@ hal::Status EvdevJoystick::Connect() {
     return s;
   }
   connected_.store(true);
-  XLOG_INFO("EvdevJoystick: connected {} ({})", cfg_.device_path, device_name_);
+  XM_INFO("EvdevJoystick: connected {} ({})", cfg_.device_path, device_name_);
   return hal::Status::kOk;
 }
 
@@ -53,7 +53,7 @@ void EvdevJoystick::Disconnect() {
   if (reader_) {
     reader_->Close();
     reader_.reset();
-    XLOG_INFO("EvdevJoystick: disconnected {}", cfg_.device_path);
+    XM_INFO("EvdevJoystick: disconnected {}", cfg_.device_path);
   }
   connected_.store(false);
 }

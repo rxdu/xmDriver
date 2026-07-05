@@ -12,7 +12,7 @@
 #include <cstring>
 #include <limits>
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 namespace {
@@ -65,12 +65,12 @@ bool MotorAkelcModbus::IsReachable() {
   int ret = port_->ReadHoldingRegisters(device_id_, REGISTER_ADDRESS_DEVICE_ID,
                                         1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DEVICE_ID, ret);
     return false;
   }
   freshness_.Mark();
-  XLOG_DEBUG_STREAM("Queried device ID: " << std::hex << buffer_[0]);
+  XM_DEBUG_STREAM("Queried device ID: " << std::hex << buffer_[0]);
   return true;
 }
 
@@ -79,7 +79,7 @@ std::string MotorAkelcModbus::GetDeviceName() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_DEVICE_NAME, 8, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DEVICE_NAME, ret);
     return "Unknown Device";
   }
@@ -97,7 +97,7 @@ hal::Status MotorAkelcModbus::SetTargetSwitchingFreq(int16_t freq) {
   int ret = port_->WriteSingleRegister(
       device_id_, REGISTER_ADDRESS_SWITCHING_FREQ, buffer_[0]);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
                REGISTER_ADDRESS_SWITCHING_FREQ, ret);
     return hal::Status::kIoError;
   }
@@ -109,7 +109,7 @@ hal::Result<int16_t> MotorAkelcModbus::GetActualSwitchingFreq() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_SWITCHING_FREQ, 1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_SWITCHING_FREQ, ret);
     return hal::Result<int16_t>::Err(hal::Status::kIoError);
   }
@@ -128,7 +128,7 @@ hal::Status MotorAkelcModbus::SetTargetRpm(int32_t rpm) {
   int ret = port_->WriteSingleRegister(
       device_id_, REGISTER_ADDRESS_CTRL_TARGET_SPEED, buffer_[0]);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
                REGISTER_ADDRESS_CTRL_TARGET_SPEED, ret);
     return hal::Status::kIoError;
   }
@@ -140,7 +140,7 @@ hal::Result<int32_t> MotorAkelcModbus::GetActualRpm() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_DRIVER_ACTUAL_RPM_HIGH, 2, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DRIVER_ACTUAL_RPM_HIGH, ret);
     return hal::Result<int32_t>::Err(hal::Status::kIoError);
   }
@@ -158,7 +158,7 @@ hal::Status MotorAkelcModbus::ApplyBrake(float percentage) {
   int ret = port_->WriteSingleRegister(
       device_id_, REGISTER_ADDRESS_CTRL_APPLY_BRAKE, buffer_[0]);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
                REGISTER_ADDRESS_CTRL_APPLY_BRAKE, ret);
     return hal::Status::kIoError;
   }
@@ -170,7 +170,7 @@ hal::Status MotorAkelcModbus::ReleaseBrake() {
   int ret = port_->WriteSingleRegister(device_id_,
                                        REGISTER_ADDRESS_CTRL_RELEASE_BRAKE, 1);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to write register {}, error code: {}",
                REGISTER_ADDRESS_CTRL_RELEASE_BRAKE, ret);
     return hal::Status::kIoError;
   }
@@ -182,7 +182,7 @@ hal::Result<double> MotorAkelcModbus::GetDriverCurrent() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_DRIVER_CURRENT, 1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DRIVER_CURRENT, ret);
     return hal::Result<double>::Err(hal::Status::kIoError);
   }
@@ -195,7 +195,7 @@ hal::Result<double> MotorAkelcModbus::GetDriverPwm() {
   int ret = port_->ReadHoldingRegisters(device_id_, REGISTER_ADDRESS_DRIVER_PWM,
                                         1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DRIVER_PWM, ret);
     return hal::Result<double>::Err(hal::Status::kIoError);
   }
@@ -208,7 +208,7 @@ hal::Result<double> MotorAkelcModbus::GetDriverTemperature() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_DRIVER_TEMPERATURE, 1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DRIVER_TEMPERATURE, ret);
     return hal::Result<double>::Err(hal::Status::kIoError);
   }
@@ -221,7 +221,7 @@ hal::Result<double> MotorAkelcModbus::GetDriverInputVoltage() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_DRIVER_INPUT_VOLTAGE, 1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_DRIVER_INPUT_VOLTAGE, ret);
     return hal::Result<double>::Err(hal::Status::kIoError);
   }
@@ -234,7 +234,7 @@ hal::Result<bool> MotorAkelcModbus::IsMotorBlocked() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_BLOCKED_STATE, 1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_BLOCKED_STATE, ret);
     return hal::Result<bool>::Err(hal::Status::kIoError);
   }
@@ -247,7 +247,7 @@ hal::Result<MotorAkelcModbus::ErrorCode> MotorAkelcModbus::GetErrorCode() {
   int ret = port_->ReadHoldingRegisters(
       device_id_, REGISTER_ADDRESS_ERROR_STATE, 1, buffer_);
   if (ret < 0) {
-    XLOG_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
+    XM_ERROR("[Akelc Modbus] Failed to read register {}, error code: {}",
                REGISTER_ADDRESS_ERROR_STATE, ret);
     return hal::Result<ErrorCode>::Err(hal::Status::kIoError);
   }
@@ -269,7 +269,7 @@ hal::Status MotorAkelcModbus::ConfigurePidWithInternalFeedback(double kp,
   for (const auto& g : gains) {
     PackGain(buffer_, g.gain);
     if (port_->WriteMultipleRegisters(device_id_, g.reg, 2, buffer_) < 0) {
-      XLOG_ERROR("[Akelc Modbus] Failed to write PID register {}", g.reg);
+      XM_ERROR("[Akelc Modbus] Failed to write PID register {}", g.reg);
       status = hal::Status::kIoError;
     }
   }
@@ -290,7 +290,7 @@ hal::Status MotorAkelcModbus::ConfigurePidWithExternalFeedback(double kp,
   for (const auto& g : gains) {
     PackGain(buffer_, g.gain);
     if (port_->WriteMultipleRegisters(device_id_, g.reg, 2, buffer_) < 0) {
-      XLOG_ERROR("[Akelc Modbus] Failed to write PID register {}", g.reg);
+      XM_ERROR("[Akelc Modbus] Failed to write PID register {}", g.reg);
       status = hal::Status::kIoError;
     }
   }

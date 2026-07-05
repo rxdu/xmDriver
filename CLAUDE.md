@@ -13,7 +13,7 @@ for the physical devices on a robot:
 - **Inputs**: joystick/keyboard HID (`input_hid`), SBUS RC receiver (`input_sbus`)
 
 Each driver is a small static library implemented against the HAL interfaces defined here in
-`src/hal`, built on the common types and logging provided by **xmBase** (`xmotion::xmBase`). The
+`src/hal`, built on the common types and telemetry provided by **xmBase** (`xmotion::xmBase`). The
 code was extracted from the `src/driver` tree of `libxmotion` / `xmNavigation`.
 
 ## Build System

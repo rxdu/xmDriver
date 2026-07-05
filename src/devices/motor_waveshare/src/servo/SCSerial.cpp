@@ -124,7 +124,9 @@ int SCSerial::setBaudRate(int baudRate)
         CR_BAUDRATE = B500000;
         break;
     default:
-        break;
+        // Unsupported baud rate: CR_BAUDRATE would be uninitialized —
+        // fail explicitly instead of programming a garbage speed.
+        return -1;
     }
     cfsetispeed(&curopt, CR_BAUDRATE);
     cfsetospeed(&curopt, CR_BAUDRATE);

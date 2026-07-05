@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <cassert>
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmbase/serialization/checksum.hpp"
 
 namespace xmotion {
@@ -42,7 +42,7 @@ Ddsm210Frame::Ddsm210Frame(uint8_t id, const std::vector<uint8_t>& frame_buffer)
   // motor id matches and checksum is correct
   switch (frame_buffer[1]) {
     case 0x64: {
-      //      XLOG_INFO("Type: 0x64");
+      //      XM_INFO("Type: 0x64");
       raw_feedback_.speed_feedback.rpm =
           static_cast<int16_t>((static_cast<uint16_t>(frame_buffer[2]) << 8) |
                                static_cast<uint16_t>(frame_buffer[3]));
@@ -57,7 +57,7 @@ Ddsm210Frame::Ddsm210Frame(uint8_t id, const std::vector<uint8_t>& frame_buffer)
       break;
     }
     case 0x74: {
-      //      XLOG_INFO("Type: 0x74");
+      //      XM_INFO("Type: 0x74");
       raw_feedback_.odom_feedback.encoder_count =
           static_cast<int32_t>((static_cast<uint32_t>(frame_buffer[2]) << 24) |
                                (static_cast<uint32_t>(frame_buffer[3]) << 16) |
@@ -72,14 +72,14 @@ Ddsm210Frame::Ddsm210Frame(uint8_t id, const std::vector<uint8_t>& frame_buffer)
       break;
     }
     case 0x75: {
-      //      XLOG_INFO("Type: 0x75");
+      //      XM_INFO("Type: 0x75");
       raw_feedback_.mode_request_feedback.mode = frame_buffer[2];
       type_ = Type::kModeRequestFeedback;
       valid_ = true;
       break;
     }
     case 0xa0: {
-      //      XLOG_INFO("Type: 0xa0");
+      //      XM_INFO("Type: 0xa0");
       raw_feedback_.mode_switch_feedback.mode = frame_buffer[2];
       type_ = Type::kModeSwitchFeedback;
       valid_ = true;

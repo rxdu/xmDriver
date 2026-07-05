@@ -30,7 +30,6 @@ jobs:
           cmake \
           build-essential \
           libeigen3-dev \
-          libspdlog-dev \
           libasio-dev \
           libmodbus-dev \
           libevdev-dev \
@@ -77,7 +76,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DXMOTION_WERROR=ON
 
     - name: Build
       run: |
@@ -110,7 +109,7 @@ jobs:
         dpkg-deb --info "$PACKAGE_NAME"
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: deb-${{ env.DIST }}-${{ env.ARCH }}
         path: build/*.deb
@@ -125,7 +124,7 @@ jobs:
     - uses: actions/checkout@v5
 
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         path: dist
         pattern: deb-*

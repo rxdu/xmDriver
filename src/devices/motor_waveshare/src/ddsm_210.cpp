@@ -13,7 +13,7 @@
 
 #include "async_port/async_serial.hpp"
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 namespace {
@@ -62,17 +62,17 @@ hal::Status Ddsm210::Connect() {
     ProcessFeedback(data, bufsize, len);
   });
   serial_->SetErrorCallback([this](TransportStatus s) {
-    XLOG_WARN("Ddsm210(id={}): serial fault: {}", cfg_.id, ToString(s));
+    XM_WARN("Ddsm210(id={}): serial fault: {}", cfg_.id, ToString(s));
     connected_.store(false);
   });
 
   if (!serial_->Open() && !serial_->IsOpened()) {
-    XLOG_ERROR("Ddsm210(id={}): failed to open serial '{}'", cfg_.id, cfg_.bus);
+    XM_ERROR("Ddsm210(id={}): failed to open serial '{}'", cfg_.id, cfg_.bus);
     return hal::Status::kIoError;
   }
   freshness_.Reset();
   connected_.store(true);
-  XLOG_INFO("Ddsm210(id={}): connected on '{}'", cfg_.id, cfg_.bus);
+  XM_INFO("Ddsm210(id={}): connected on '{}'", cfg_.id, cfg_.bus);
   return hal::Status::kOk;
 }
 
@@ -82,7 +82,7 @@ void Ddsm210::Disconnect() {
   if (serial_) serial_->Close();
   connected_.store(false);
   freshness_.Reset();
-  XLOG_INFO("Ddsm210(id={}): disconnected", cfg_.id);
+  XM_INFO("Ddsm210(id={}): disconnected", cfg_.id);
 }
 
 bool Ddsm210::IsConnected() const {
@@ -179,7 +179,7 @@ int32_t Ddsm210::GetEncoderCount() const {
 hal::Status Ddsm210::SetMode(Mode mode, uint32_t timeout_ms) {
   if (mode != Mode::kOpenLoop && mode != Mode::kSpeed &&
       mode != Mode::kPosition) {
-    XLOG_WARN("Ddsm210::SetMode: invalid mode");
+    XM_WARN("Ddsm210::SetMode: invalid mode");
     return hal::Status::kInvalidArgument;
   }
   if (!IsConnected()) return hal::Status::kNotConnected;
@@ -196,13 +196,13 @@ hal::Status Ddsm210::SetMode(Mode mode, uint32_t timeout_ms) {
     std::this_thread::sleep_for(step);
     if (GetMode() == mode) return hal::Status::kOk;
   }
-  XLOG_WARN("Ddsm210::SetMode: mode not confirmed within timeout");
+  XM_WARN("Ddsm210::SetMode: mode not confirmed within timeout");
   return hal::Status::kTimeout;
 }
 
 hal::Status Ddsm210::SetMotorId(uint8_t id, uint32_t timeout_ms) {
   if (id == 0xaa) {
-    XLOG_WARN("Ddsm210::SetMotorId: 0xaa is reserved for broadcast");
+    XM_WARN("Ddsm210::SetMotorId: 0xaa is reserved for broadcast");
     return hal::Status::kInvalidArgument;
   }
   if (!IsConnected()) return hal::Status::kNotConnected;

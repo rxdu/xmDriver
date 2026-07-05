@@ -32,7 +32,7 @@ void VescStateUpdatedCallback(const StampedVescState &state) {
              << std::endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int /*argc*/, char * /*argv*/[]) {
   VescCanInterface vesc;
   vesc.SetStateUpdatedCallback(VescStateUpdatedCallback);
   if (!vesc.Connect("can0", 0x68)) {
