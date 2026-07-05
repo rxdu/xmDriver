@@ -18,7 +18,7 @@ ADR-0003 hardening + HAL-completion effort. `[ ]` todo · `[~]` in progress · `
 - [x] Shared `IoService` (one `io_context` + one I/O thread for all asio ports)
 - [x] async_can: bounded TX queue + `TransportStatus` return + error callback
 - [x] async_serial: `TransportStatus` return, error callback, shared io_context
-- [x] Route all transport logging through XLOG (no cout/cerr, no frame spam)
+- [x] Route all transport logging through the telemetry event macros (XM_*) (no cout/cerr, no frame spam)
 - [x] Health signal on bus-off/unplug (error callback + drivers surface via Health)
 - [x] Transport interface headers: `TransportStatus` returns, `CanFrame`
 - [ ] (optional follow-up) auto-reconnect with bounded backoff — currently signal-only
@@ -29,7 +29,7 @@ ADR-0003 hardening + HAL-completion effort. `[ ]` todo · `[~]` in progress · `
 - [x] AKELC → `hal::Motor` + Speed/Brake: Result, Stop, safe Disconnect, validation, freshness
 - [x] DDSM210 → `hal::Motor` + Speed/Position: non-blocking, validation, safe Disconnect, freshness
 - [x] SMS-STS → `hal::Motor` + Position/Speed: `state_` bug fixed, real Health, de-blocked reads
-- [x] IMU → `hal::Imu`: freshness watchdog, XLOG, bounded `ch_serial` parse (OOB fixed)
+- [x] IMU → `hal::Imu`: freshness watchdog, XM_* event logging, bounded `ch_serial` parse (OOB fixed)
 - [x] input_hid joystick/keyboard → `hal::Joystick`/`Keyboard` on libevdev (races/OOB fixed)
 - [x] input_sbus → `hal::RcReceiver` (first-party decoder; rpi_sbus dropped)
 

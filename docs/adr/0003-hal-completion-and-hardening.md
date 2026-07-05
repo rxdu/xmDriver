@@ -44,7 +44,7 @@ Removed: `imu_interface.hpp`, `sensor_interface.hpp`, `joystick_interface.hpp`, 
 
 - **One shared `io_context` + one I/O thread** for all asio ports (ADR 0002 decision), via a process-wide `hal`-agnostic `IoService` the ports post onto. Replaces thread-per-port.
 - **Bounded TX** on CAN (matching serial's bounded ring); `SendFrame`/`SendBytes` return `Status` (or `Result`) so the caller sees backpressure/"queue full"/"not connected" instead of `void`.
-- **Structured logging** — all transport diagnostics via `xmotion::logging` (XLOG); no `std::cout`/`std::cerr`, no per-frame stdout spam.
+- **Structured logging** — all transport diagnostics via the xmBase telemetry event macros (`XM_*`; originally XLOG, migrated in the v0.3.0 telemetry clean break); no `std::cout`/`std::cerr`, no per-frame stdout spam.
 - **Health + recovery** — ports expose health; on bus-off/unplug they surface a health state (auto-reconnect with bounded backoff is provided where safe, otherwise the app is signalled — never a silent dead port).
 - **Un-leak the OS** — `struct can_frame` (`linux/can.h`) no longer appears in `can_interface.hpp`; a first-party `hal`/transport `CanFrame` is used at the boundary.
 

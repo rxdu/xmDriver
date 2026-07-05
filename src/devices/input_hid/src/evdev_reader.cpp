@@ -18,7 +18,7 @@
 #include <cstring>
 #include <utility>
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion::input_hid_detail {
 namespace {
@@ -39,14 +39,14 @@ hal::Status EvdevReader::Open() {
 
   fd_ = ::open(device_path_.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
   if (fd_ < 0) {
-    XLOG_ERROR("EvdevReader: cannot open {}: {}", device_path_,
+    XM_ERROR("EvdevReader: cannot open {}: {}", device_path_,
                std::strerror(errno));
     return hal::Status::kNotConnected;
   }
 
   const int rc = libevdev_new_from_fd(fd_, &dev_);
   if (rc < 0) {
-    XLOG_ERROR("EvdevReader: libevdev init failed on {}: {}", device_path_,
+    XM_ERROR("EvdevReader: libevdev init failed on {}: {}", device_path_,
                std::strerror(-rc));
     Teardown();
     return hal::Status::kIoError;
@@ -58,7 +58,7 @@ hal::Status EvdevReader::Open() {
   epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
   wake_fd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (epoll_fd_ < 0 || wake_fd_ < 0) {
-    XLOG_ERROR("EvdevReader: epoll/eventfd setup failed for {}", device_path_);
+    XM_ERROR("EvdevReader: epoll/eventfd setup failed for {}", device_path_);
     Teardown();
     return hal::Status::kIoError;
   }
@@ -71,7 +71,7 @@ hal::Status EvdevReader::Open() {
   wake_ev.data.fd = wake_fd_;
   if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd_, &dev_ev) < 0 ||
       epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, wake_fd_, &wake_ev) < 0) {
-    XLOG_ERROR("EvdevReader: epoll_ctl ADD failed for {}", device_path_);
+    XM_ERROR("EvdevReader: epoll_ctl ADD failed for {}", device_path_);
     Teardown();
     return hal::Status::kIoError;
   }
@@ -84,7 +84,7 @@ hal::Status EvdevReader::Open() {
   keep_running_.store(true, std::memory_order_release);
   thread_ = std::thread(&EvdevReader::RunLoop, this);
 
-  XLOG_INFO("EvdevReader: opened {} ({})", device_path_, device_name_);
+  XM_INFO("EvdevReader: opened {} ({})", device_path_, device_name_);
   return hal::Status::kOk;
 }
 
@@ -140,7 +140,7 @@ bool EvdevReader::DrainEvents() {
   // rc < 0 here: -EAGAIN means fully drained; anything else is fatal (e.g.
   // -ENODEV when the device is unplugged).
   if (rc != -EAGAIN) {
-    XLOG_WARN("EvdevReader: read error on {}: {}", device_path_,
+    XM_WARN("EvdevReader: read error on {}: {}", device_path_,
               std::strerror(-rc));
     return false;
   }
@@ -154,7 +154,7 @@ void EvdevReader::RunLoop() {
     const int n = epoll_wait(epoll_fd_, events, 2, kPollTimeoutMs);
     if (n < 0) {
       if (errno == EINTR) continue;
-      XLOG_ERROR("EvdevReader: epoll_wait failed on {}, errno {}", device_path_,
+      XM_ERROR("EvdevReader: epoll_wait failed on {}, errno {}", device_path_,
                  errno);
       break;
     }

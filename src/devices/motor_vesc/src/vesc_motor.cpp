@@ -9,7 +9,7 @@
 #include <chrono>
 #include <cmath>
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 namespace {
@@ -77,19 +77,19 @@ hal::Status VescMotor::Connect() {
   // An async bus fault (bus-off, interface down, unplug) latches so Health()
   // reports kFault instead of a link that only looks stale.
   vesc_.SetErrorCallback([this](TransportStatus reason) {
-    XLOG_ERROR("VescMotor: CAN bus fault on vesc {}: {}",
+    XM_ERROR("VescMotor: CAN bus fault on vesc {}: {}",
                static_cast<int>(cfg_.id), ToString(reason));
     bus_fault_.store(true);
   });
   const bool opened = injected_can_ ? vesc_.Connect(injected_can_, cfg_.id)
                                     : vesc_.Connect(cfg_.bus, cfg_.id);
   if (!opened) {
-    XLOG_ERROR("VescMotor: failed to open CAN bus '{}' for vesc {}", cfg_.bus,
+    XM_ERROR("VescMotor: failed to open CAN bus '{}' for vesc {}", cfg_.bus,
                static_cast<int>(cfg_.id));
     return hal::Status::kIoError;
   }
   connected_ = true;
-  XLOG_INFO("VescMotor: connected on '{}' vesc {}", cfg_.bus,
+  XM_INFO("VescMotor: connected on '{}' vesc {}", cfg_.bus,
             static_cast<int>(cfg_.id));
   return hal::Status::kOk;
 }
@@ -101,7 +101,7 @@ void VescMotor::Disconnect() {
     monitor_.Reset();
     bus_fault_.store(false);
     connected_ = false;
-    XLOG_INFO("VescMotor: disconnected vesc {}", static_cast<int>(cfg_.id));
+    XM_INFO("VescMotor: disconnected vesc {}", static_cast<int>(cfg_.id));
   }
 }
 

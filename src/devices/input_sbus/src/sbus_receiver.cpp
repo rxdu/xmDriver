@@ -8,7 +8,7 @@
 
 #include "async_port/async_serial.hpp"
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 namespace {
@@ -39,7 +39,7 @@ hal::Status SbusReceiver::Connect() {
   };
   auto on_error = [this](TransportStatus st) {
     transport_faulted_ = true;
-    XLOG_ERROR("SBUS transport fault on {}: {}", port_, static_cast<int>(st));
+    XM_ERROR("SBUS transport fault on {}: {}", port_, static_cast<int>(st));
   };
 
   if (owns_transport_) {
@@ -51,11 +51,11 @@ hal::Status SbusReceiver::Connect() {
     serial->SetReceiveCallback(on_bytes);
     serial->SetErrorCallback(on_error);
     if (!serial->Open()) {
-      XLOG_ERROR("SBUS: failed to open serial port {}", port_);
+      XM_ERROR("SBUS: failed to open serial port {}", port_);
       return hal::Status::kIoError;
     }
     if (!serial->ChangeBaudRate(kSbusBaud)) {
-      XLOG_ERROR("SBUS: failed to set {} baud on {}", kSbusBaud, port_);
+      XM_ERROR("SBUS: failed to set {} baud on {}", kSbusBaud, port_);
       serial->Close();
       return hal::Status::kIoError;
     }
@@ -65,7 +65,7 @@ hal::Status SbusReceiver::Connect() {
     serial_->SetReceiveCallback(on_bytes);
     serial_->SetErrorCallback(on_error);
     if (!serial_->Open()) {
-      XLOG_ERROR("SBUS: failed to open injected serial transport");
+      XM_ERROR("SBUS: failed to open injected serial transport");
       return hal::Status::kIoError;
     }
   }
@@ -87,7 +87,7 @@ hal::Status SbusReceiver::Connect() {
     }
   });
 
-  XLOG_INFO("SBUS receiver connected on {}", port_);
+  XM_INFO("SBUS receiver connected on {}", port_);
   return hal::Status::kOk;
 }
 

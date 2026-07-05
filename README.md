@@ -12,10 +12,10 @@ The μ layer that talks to motors, sensors and radios over serial, CAN and Modbu
 drivers for the physical devices a robot is built from: brushed/brushless motor controllers and
 servos (over serial, CAN and Modbus-RTU), inertial measurement units, and RC / human-input
 devices (SBUS receivers, joysticks and keyboards). Each driver is a small, independently linkable
-module built on the common types and logging provided by [xmBase](https://github.com/rxdu/xmBase).
+module built on the common types and telemetry provided by [xmBase](https://github.com/rxdu/xmBase).
 
 > Part of the XMotion family — see the [umbrella](https://github.com/rxdu/xmotion). Sibling
-> components include [xmBase](https://github.com/rxdu/xmBase) (foundation: logging and
+> components include [xmBase](https://github.com/rxdu/xmBase) (foundation: telemetry and
 > common types) and [xmNavigation](https://github.com/rxdu/xmNavigation) (motion algorithms).
 
 ## Modules
@@ -36,7 +36,7 @@ module built on the common types and logging provided by [xmBase](https://github
 ## Dependency on xmBase
 
 xmDriver builds on **xmBase** (CMake package `xmBase`), which provides the single
-`xmotion::xmBase` target (logging + common types) that every driver module links against. The
+`xmotion::xmBase` target (telemetry + common types) that every driver module links against. The
 build resolves it in one of three ways, in order:
 
 1. **In-tree** — if a parent superbuild already defines `xmotion::xmBase` (e.g. the umbrella

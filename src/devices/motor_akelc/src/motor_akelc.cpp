@@ -14,7 +14,7 @@
 #include <utility>
 
 #include "modbus_rtu/modbus_rtu_port.hpp"
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 namespace {
@@ -66,7 +66,7 @@ hal::Status MotorAkelc::Connect() {
     if (!port_->Open(cfg_.bus, cfg_.baud_rate, ModbusRtuInterface::Parity::kEven,
                      ModbusRtuInterface::DataBit::kBit8,
                      ModbusRtuInterface::StopBit::kBit1)) {
-      XLOG_ERROR("[Akelc] Failed to open Modbus port {} @ {} baud", cfg_.bus,
+      XM_ERROR("[Akelc] Failed to open Modbus port {} @ {} baud", cfg_.bus,
                  cfg_.baud_rate);
       return hal::Status::kIoError;
     }
@@ -77,14 +77,14 @@ hal::Status MotorAkelc::Connect() {
   // Confirm the device actually answers before declaring ourselves online — a
   // dead bus must not look connected.
   if (!impl_->IsReachable()) {
-    XLOG_ERROR("[Akelc] Device id {} on {} did not respond", cfg_.device_id,
+    XM_ERROR("[Akelc] Device id {} on {} did not respond", cfg_.device_id,
                cfg_.bus);
     impl_.reset();
     return hal::Status::kTimeout;
   }
 
   connected_ = true;
-  XLOG_INFO("[Akelc] Connected to device id {} on {}", cfg_.device_id,
+  XM_INFO("[Akelc] Connected to device id {} on {}", cfg_.device_id,
             cfg_.bus);
   return hal::Status::kOk;
 }
@@ -95,7 +95,7 @@ void MotorAkelc::Disconnect() {
   if (port_) port_->Close();
   impl_.reset();
   connected_ = false;
-  XLOG_INFO("[Akelc] Disconnected device id {} on {}", cfg_.device_id,
+  XM_INFO("[Akelc] Disconnected device id {} on {}", cfg_.device_id,
             cfg_.bus);
 }
 

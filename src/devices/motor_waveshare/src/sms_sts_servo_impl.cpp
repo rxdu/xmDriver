@@ -20,7 +20,7 @@
 #include "SCServo.h"
 
 #include "xmdriver/hal/freshness.hpp"
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 namespace {
@@ -55,14 +55,14 @@ class SmsStsServo::Impl {
     {
       std::lock_guard<std::mutex> lk(bus_mtx_);
       if (!sm_st_.begin(cfg_.baud, cfg_.bus.c_str())) {
-        XLOG_ERROR("SmsStsServo(id={}): failed to open '{}'", cfg_.id, cfg_.bus);
+        XM_ERROR("SmsStsServo(id={}): failed to open '{}'", cfg_.id, cfg_.bus);
         return hal::Status::kIoError;
       }
     }
     freshness_.Reset();
     connected_.store(true);
     StartRefresh();
-    XLOG_INFO("SmsStsServo(id={}): connected on '{}'", cfg_.id, cfg_.bus);
+    XM_INFO("SmsStsServo(id={}): connected on '{}'", cfg_.id, cfg_.bus);
     return hal::Status::kOk;
   }
 
@@ -76,7 +76,7 @@ class SmsStsServo::Impl {
     }
     connected_.store(false);
     freshness_.Reset();
-    XLOG_INFO("SmsStsServo(id={}): disconnected", cfg_.id);
+    XM_INFO("SmsStsServo(id={}): disconnected", cfg_.id);
   }
 
   bool IsConnected() const { return connected_.load(); }

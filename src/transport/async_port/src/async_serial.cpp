@@ -17,7 +17,7 @@
 #include <cstring>
 #include <future>
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 #include "async_port/io_service.hpp"
 
@@ -36,7 +36,7 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
 
   struct serial_struct serial;
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    XLOG_ERROR("TIOCGSERIAL failed on {}: {}", port_, strerror(errno));
+    XM_ERROR("TIOCGSERIAL failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
@@ -45,22 +45,22 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
   serial.custom_divisor = serial.baud_base / baudrate;
 
   if (serial.custom_divisor == 0) {
-    XLOG_ERROR("Invalid custom divisor for baud rate {}", baudrate);
+    XM_ERROR("Invalid custom divisor for baud rate {}", baudrate);
     return false;
   }
 
   if (ioctl(fd, TIOCSSERIAL, &serial) < 0) {
-    XLOG_ERROR("TIOCSSERIAL failed on {}: {}", port_, strerror(errno));
+    XM_ERROR("TIOCSSERIAL failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
   // Verify the settings
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    XLOG_ERROR("TIOCGSERIAL (verify) failed on {}: {}", port_, strerror(errno));
+    XM_ERROR("TIOCGSERIAL (verify) failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
-  XLOG_INFO("Changed baudrate on {} to {} (divisor {}, base {})", port_,
+  XM_INFO("Changed baudrate on {} to {} (divisor {}, base {})", port_,
             baudrate, serial.custom_divisor, serial.baud_base);
 
   return true;
@@ -108,9 +108,9 @@ bool AsyncSerial::Open() {
 #endif
 
     port_opened_ = true;
-    XLOG_INFO("Serial port opened: {}@{}", port_, baud_rate_);
+    XM_INFO("Serial port opened: {}@{}", port_, baud_rate_);
   } catch (std::system_error &e) {
-    XLOG_ERROR("Failed to open serial port {}: {}", port_, e.what());
+    XM_ERROR("Failed to open serial port {}: {}", port_, e.what());
     return false;
   }
 
@@ -155,7 +155,7 @@ void AsyncSerial::HandleError(TransportStatus reason) {
     tx_in_progress_ = false;
   }
   if (was_open && reason != TransportStatus::kOk) {
-    XLOG_WARN("Serial port {} faulted: {}", port_, ToString(reason));
+    XM_WARN("Serial port {} faulted: {}", port_, ToString(reason));
     if (err_cb_) err_cb_(reason);
   }
 }
@@ -219,7 +219,7 @@ TransportStatus AsyncSerial::SendBytes(const uint8_t *bytes, size_t length) {
   std::lock_guard<std::recursive_mutex> lock(tx_mutex_);
   if (tx_rbuf_.GetFreeSize() < length) {
     // Bounded TX buffer full — report backpressure instead of throwing.
-    XLOG_WARN("Serial TX buffer full on {} ({} bytes free < {}), dropping",
+    XM_WARN("Serial TX buffer full on {} ({} bytes free < {}), dropping",
               port_, tx_rbuf_.GetFreeSize(), length);
     return TransportStatus::kQueueFull;
   }

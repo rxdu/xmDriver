@@ -9,7 +9,7 @@
 
 #include "modbus_rtu/modbus_rtu_port.hpp"
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
 ModbusRtuPort::ModbusRtuPort() {}
@@ -27,20 +27,20 @@ bool ModbusRtuPort::Open(const std::string &port_name, int baud_rate,
       modbus_new_rtu(port_name.c_str(), baud_rate, static_cast<char>(parity),
                      static_cast<int>(data_bit), static_cast<int>(stop_bit));
   if (ctx_ == nullptr) {
-    XLOG_ERROR("Unable to create the libmodbus context");
+    XM_ERROR("Unable to create the libmodbus context");
     return false;
   }
 
   // connect to port
   if (modbus_connect(ctx_) == -1) {
-    XLOG_ERROR("Connection failed: {}", modbus_strerror(errno));
+    XM_ERROR("Connection failed: {}", modbus_strerror(errno));
     Close();  // free the context so IsOpened() reflects failure, no leak
     return false;
   }
 
   // by default set 500ms timeout
   if (!SetResponseTimeout(0, 500000)) {
-    XLOG_ERROR("Failed to set response timeout to default 500ms");
+    XM_ERROR("Failed to set response timeout to default 500ms");
     Close();
     return false;
   }
@@ -59,7 +59,7 @@ bool ModbusRtuPort::IsOpened() const { return (ctx_ != nullptr); }
 
 bool ModbusRtuPort::SetResponseTimeout(int sec, int usec) {
   if (ctx_ == nullptr) {
-    XLOG_ERROR("Modbus context not initialized");
+    XM_ERROR("Modbus context not initialized");
     return false;
   }
 #if (LIBMODBUS_VERSION_MAJOR == 3 && LIBMODBUS_VERSION_MINOR >= 1) || \
@@ -77,12 +77,12 @@ bool ModbusRtuPort::SetResponseTimeout(int sec, int usec) {
 
 bool ModbusRtuPort::SelectDevice(uint8_t device_id) {
   if (ctx_ == nullptr) {
-    XLOG_ERROR("Modbus context not initialized");
+    XM_ERROR("Modbus context not initialized");
     return false;
   }
   int ret = modbus_set_slave(ctx_, device_id);
   if (ret != 0) {
-    XLOG_ERROR("Failed to select slave device");
+    XM_ERROR("Failed to select slave device");
     return false;
   }
   return true;

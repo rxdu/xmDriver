@@ -16,7 +16,7 @@
 
 #include <future>
 
-#include "xmbase/logging/xlogger.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
 
 #include "async_port/io_service.hpp"
 #include "async_port/detail/socketcan_frame.hpp"
@@ -38,13 +38,13 @@ AsyncCAN::~AsyncCAN() { Close(); }
 bool AsyncCAN::Open() {
   const size_t iface_name_size = port_.size() + 1;
   if (iface_name_size > IFNAMSIZ) {
-    XLOG_ERROR("CAN interface name too long: {}", port_);
+    XM_ERROR("CAN interface name too long: {}", port_);
     return false;
   }
 
   can_fd_ = socket(PF_CAN, SOCK_RAW | SOCK_NONBLOCK, CAN_RAW);
   if (can_fd_ < 0) {
-    XLOG_ERROR("Failed to open CAN socket on {}: {}", port_, strerror(errno));
+    XM_ERROR("Failed to open CAN socket on {}: {}", port_, strerror(errno));
     return false;
   }
 
@@ -52,7 +52,7 @@ bool AsyncCAN::Open() {
   memset(&ifr, 0, sizeof(ifr));
   memcpy(ifr.ifr_name, port_.c_str(), iface_name_size);
   if (ioctl(can_fd_, SIOCGIFINDEX, &ifr) < 0) {
-    XLOG_ERROR("CAN interface {} not found: {}", port_, strerror(errno));
+    XM_ERROR("CAN interface {} not found: {}", port_, strerror(errno));
     ::close(can_fd_);
     can_fd_ = -1;
     return false;
@@ -64,7 +64,7 @@ bool AsyncCAN::Open() {
   addr.can_ifindex = ifr.ifr_ifindex;
   if (bind(can_fd_, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) <
       0) {
-    XLOG_ERROR("Failed to bind CAN socket on {}: {}", port_, strerror(errno));
+    XM_ERROR("Failed to bind CAN socket on {}: {}", port_, strerror(errno));
     ::close(can_fd_);
     can_fd_ = -1;
     return false;
@@ -72,7 +72,7 @@ bool AsyncCAN::Open() {
 
   socketcan_stream_.assign(can_fd_);  // asio owns the fd from here
   port_opened_ = true;
-  XLOG_INFO("CAN port opened: {}", port_);
+  XM_INFO("CAN port opened: {}", port_);
 
   // Arm the read loop on the I/O thread.
   auto self = shared_from_this();
@@ -129,7 +129,7 @@ void AsyncCAN::HandleError(TransportStatus reason) {
     tx_in_progress_ = false;
   }
   if (was_open && reason != TransportStatus::kOk) {
-    XLOG_WARN("CAN port {} faulted: {}", port_, ToString(reason));
+    XM_WARN("CAN port {} faulted: {}", port_, ToString(reason));
     if (err_cb_) err_cb_(reason);
   }
 }
@@ -162,7 +162,7 @@ TransportStatus AsyncCAN::SendFrame(const CanFrame &frame) {
   {
     std::lock_guard<std::mutex> lk(tx_mutex_);
     if (tx_queue_.size() >= kMaxTxQueue) {
-      XLOG_WARN("CAN TX queue full on {} ({} frames), dropping frame", port_,
+      XM_WARN("CAN TX queue full on {} ({} frames), dropping frame", port_,
                 kMaxTxQueue);
       return TransportStatus::kQueueFull;
     }

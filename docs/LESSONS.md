@@ -24,7 +24,7 @@ Team-visible record of mistakes and the patterns that replace them. Consult duri
 
 ### Use the project logger at every boundary
 - **Pattern:** The transport layer — the most failure-prone code — logged via `std::cout`/`std::cerr` (no levels, no timestamps, unfilterable) and even printed every received CAN frame to stdout by default. Several drivers logged nothing at all.
-- **Correction:** Route all connect/disconnect/fault/timeout/reconnect diagnostics through the xmBase logger (XLOG). No `std::cout`/`std::cerr` in library code; no unconditional per-frame prints.
+- **Correction:** Route all connect/disconnect/fault/timeout/reconnect diagnostics through the xmBase telemetry event macros (`XM_ERROR`/`XM_WARN`/`XM_INFO`/`XM_DEBUG`). No `std::cout`/`std::cerr` in library code; no unconditional per-frame prints.
 - **Context:** Observability — xmDriver.
 
 ### A silent clamp that changes behavior is a hidden safety bug — and a test seam finds it
