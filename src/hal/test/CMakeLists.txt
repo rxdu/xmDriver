@@ -10,3 +10,10 @@ add_executable(test_freshness test_freshness.cpp)
 target_link_libraries(test_freshness PRIVATE gtest gmock gtest_main hal)
 gtest_discover_tests(test_freshness)
 add_test(NAME gtest_freshness COMMAND test_freshness)
+
+# DeviceHealth -> telemetry HealthState mapping + transition-only reporting,
+# observed through a minimal capture binding (no SDK needed).
+add_executable(test_health_telemetry test_health_telemetry.cpp)
+target_link_libraries(test_health_telemetry PRIVATE gtest gmock gtest_main hal)
+gtest_discover_tests(test_health_telemetry)
+add_test(NAME gtest_health_telemetry COMMAND test_health_telemetry)
