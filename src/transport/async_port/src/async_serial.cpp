@@ -195,7 +195,7 @@ void AsyncSerial::WriteToPort(bool check_if_busy) {
   std::memcpy(tx_buf_, data.data(), len);
   serial_port_.async_write_some(
       asio::buffer(tx_buf_, len),
-      [sthis](asio::error_code error, size_t bytes_transferred) {
+      [sthis](asio::error_code error, size_t /*bytes_transferred*/) {
         if (error) {
           if (error != asio::error::operation_aborted)
             sthis->HandleError(TransportStatus::kIoError);

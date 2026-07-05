@@ -21,6 +21,7 @@ endif ()
 option(BUILD_TESTING "Build tests" OFF)
 option(STATIC_CHECK "Enable static check" OFF)
 option(XMOTION_DEV_MODE "Development mode forces building tests" OFF)
+option(XMOTION_WERROR "Treat warnings as errors (-Wall -Wextra -Werror)" OFF)
 
 ## Generate symbols for IDE indexer
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -106,6 +107,14 @@ endif ()
 
 ## Dependent libraries (googletest for tests, rpi_sbus for input_sbus)
 add_subdirectory(third_party)
+
+if (XMOTION_WERROR)
+  # Applied after third_party so vendored code builds with its own flags.
+  # -Wmaybe-uninitialized stays a visible warning but does not gate: GCC's
+  # flow analysis has a documented false-positive record inside libstdc++
+  # headers (std::function/std::regex internals under sanitizers + -O).
+  add_compile_options(-Wall -Wextra -Werror -Wno-error=maybe-uninitialized)
+endif ()
 
 ## Per-module CMake helpers (xmdriver_add_module / xmdriver_add_group)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/xmdriver_module.cmake)

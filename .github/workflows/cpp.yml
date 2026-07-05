@@ -28,7 +28,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DXMOTION_WERROR=ON
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
@@ -52,7 +52,7 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DXMOTION_WERROR=ON
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
@@ -78,7 +78,7 @@ jobs:
       - name: Configure CMake (ASan + UBSan)
         run: |
           cmake -B ${{runner.workspace}}/build-asan -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_TESTING=ON \
+            -DBUILD_TESTING=ON -DXMOTION_WERROR=ON \
             -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
       - name: Build
@@ -107,7 +107,7 @@ jobs:
       - name: Configure CMake (TSan)
         run: |
           cmake -B ${{runner.workspace}}/build-tsan -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_TESTING=ON \
+            -DBUILD_TESTING=ON -DXMOTION_WERROR=ON \
             -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=thread"
       - name: Build
@@ -133,7 +133,7 @@ jobs:
       - name: Configure CMake (coverage)
         run: |
           cmake -B ${{runner.workspace}}/build-cov -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_TESTING=ON \
+            -DBUILD_TESTING=ON -DXMOTION_WERROR=ON \
             -DCMAKE_CXX_FLAGS="--coverage -O0 -g" \
             -DCMAKE_EXE_LINKER_FLAGS="--coverage"
       - name: Build

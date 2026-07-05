@@ -17,7 +17,7 @@ using namespace xmotion;
 
 SbusDecoder sbus_decoder;
 
-void HandleUart(uint8_t* data, const size_t bufsize, size_t len) {
+void HandleUart(uint8_t* data, const size_t /*bufsize*/, size_t len) {
   // std::cout << "Received " << len << " bytes" << std::endl;
   // for (int i = 0; i < len; ++i) {
   //   std::cout << "0x" << std::hex << (int)data[i] << " ";
@@ -34,7 +34,7 @@ void HandleUart(uint8_t* data, const size_t bufsize, size_t len) {
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int /*argc*/, char* /*argv*/[]) {
   auto serial = std::make_shared<AsyncSerial>("/dev/ttyUSB1");
   serial->SetParity(AsyncSerial::Parity::kEven);
   serial->SetStopBits(AsyncSerial::StopBits::kTwo);

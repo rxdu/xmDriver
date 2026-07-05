@@ -106,7 +106,7 @@ int ch_imu_data2str(hipnuc_raw_t *raw, char *buf, size_t buf_size)
 
 static int parse_data(hipnuc_raw_t *raw)
 {
-    int ofs = 0, i = 0;
+    int ofs = 0;
     uint8_t *p = &raw->buf[CH_HDR_SIZE];
 
     while (ofs < raw->len)

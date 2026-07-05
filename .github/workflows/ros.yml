@@ -42,4 +42,4 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/colcon_ws
           source /opt/ros/${ROS_DISTRO}/setup.bash
-          colcon build --symlink-install --cmake-args " -DCMAKE_BUILD_TYPE=Release"
+          colcon build --symlink-install --cmake-args " -DCMAKE_BUILD_TYPE=Release" " -DXMOTION_WERROR=ON"
