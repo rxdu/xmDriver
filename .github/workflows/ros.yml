@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
-            libeigen3-dev libspdlog-dev libasio-dev libmodbus-dev libevdev-dev
+            libeigen3-dev libasio-dev libmodbus-dev libevdev-dev
       - name: Additional ROS dependencies
         run: |
           apt update

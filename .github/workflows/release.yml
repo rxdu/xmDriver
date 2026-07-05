@@ -30,7 +30,6 @@ jobs:
           cmake \
           build-essential \
           libeigen3-dev \
-          libspdlog-dev \
           libasio-dev \
           libmodbus-dev \
           libevdev-dev \
