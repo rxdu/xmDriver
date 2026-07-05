@@ -154,7 +154,7 @@ jobs:
           genhtml coverage.filtered.info --output-directory coverage-html \
             --ignore-errors source 2>/dev/null || true
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-html
           path: ${{runner.workspace}}/build-cov/coverage-html
