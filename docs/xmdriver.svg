@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="xmDriver — IMU: 3-axis frame with gyro ring (host hardware drivers)">
+  <title>xmDriver — IMU: 3-axis frame with gyro ring (host hardware drivers)</title>
+  <rect x="6" y="6" width="116" height="116" rx="30" fill="#161B26" stroke="#F2A23A" stroke-opacity="0.4" stroke-width="2"/>
+  <g transform="translate(-11.64 -9.69) scale(1.22)">
+  <g stroke="#F2A23A" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M62 67 L62 40 M62 40 L65.9 45.2 M62 40 L58.1 45.2" stroke="#F2A23A" stroke-width="2.52" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M62 67 L85 80 M85 80 L78.6 80.8 M85 80 L82.4 74.1" stroke="#F2A23A" stroke-width="2.52" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M62 67 L39 80 M39 80 L41.6 74.1 M39 80 L45.4 80.8" stroke="#F2A23A" stroke-width="2.52" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="62" cy="56" rx="10" ry="4" stroke-width="2.17"/>
+  <path d="M72 56 l-3.5 -2 M72 56 l-2.5 4" stroke-width="2.45"/></g>
+  <path d="M62 62 L68 67 L62 72 L56 67 Z" fill="#F2A23A"/>
+</g>
+</svg>
