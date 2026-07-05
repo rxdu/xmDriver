@@ -25,6 +25,8 @@
 #include <memory>
 #include <string>
 
+#include "xmbase/telemetry/telemetry.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmdriver/hal/motor_controller.hpp"
 #include "xmdriver/hal/motor_factory.hpp"
 #include "xmdriver/transport/modbus_rtu_interface.hpp"
@@ -75,6 +77,13 @@ class MotorAkelc final : public hal::Motor,
   std::shared_ptr<ModbusRtuInterface> port_;
   std::unique_ptr<MotorAkelcModbus> impl_;
   bool connected_ = false;
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Mutable members are touched from const Health().
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.akelc");
+  mutable telemetry::Gauge data_age_ms_ =
+      telemetry::GetGauge("driver.akelc.data_age_ms");
+  mutable hal::HealthReporter health_reporter_{"driver.akelc"};
 };
 
 // Explicit registration for static-library linkage (a static self-registrar

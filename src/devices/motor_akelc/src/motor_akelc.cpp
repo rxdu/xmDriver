@@ -9,6 +9,7 @@
 
 #include "motor_akelc/motor_akelc.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <utility>
@@ -66,8 +67,8 @@ hal::Status MotorAkelc::Connect() {
     if (!port_->Open(cfg_.bus, cfg_.baud_rate, ModbusRtuInterface::Parity::kEven,
                      ModbusRtuInterface::DataBit::kBit8,
                      ModbusRtuInterface::StopBit::kBit1)) {
-      XM_ERROR("[Akelc] Failed to open Modbus port {} @ {} baud", cfg_.bus,
-                 cfg_.baud_rate);
+      XM_ERROR_SRC(src_, "[Akelc] Failed to open Modbus port {} @ {} baud",
+                   cfg_.bus, cfg_.baud_rate);
       return hal::Status::kIoError;
     }
   }
@@ -77,15 +78,15 @@ hal::Status MotorAkelc::Connect() {
   // Confirm the device actually answers before declaring ourselves online — a
   // dead bus must not look connected.
   if (!impl_->IsReachable()) {
-    XM_ERROR("[Akelc] Device id {} on {} did not respond", cfg_.device_id,
-               cfg_.bus);
+    XM_ERROR_SRC(src_, "[Akelc] Device id {} on {} did not respond",
+                 cfg_.device_id, cfg_.bus);
     impl_.reset();
     return hal::Status::kTimeout;
   }
 
   connected_ = true;
-  XM_INFO("[Akelc] Connected to device id {} on {}", cfg_.device_id,
-            cfg_.bus);
+  XM_INFO_SRC(src_, "[Akelc] Connected to device id {} on {}", cfg_.device_id,
+              cfg_.bus);
   return hal::Status::kOk;
 }
 
@@ -95,27 +96,41 @@ void MotorAkelc::Disconnect() {
   if (port_) port_->Close();
   impl_.reset();
   connected_ = false;
-  XM_INFO("[Akelc] Disconnected device id {} on {}", cfg_.device_id,
-            cfg_.bus);
+  health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
+  XM_INFO_SRC(src_, "[Akelc] Disconnected device id {} on {}", cfg_.device_id,
+              cfg_.bus);
 }
 
 bool MotorAkelc::IsConnected() const { return connected_; }
 
 hal::DeviceHealth MotorAkelc::Health() const {
-  if (!connected_ || !impl_)
+  if (!connected_ || !impl_) {
+    health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
     return {hal::DeviceHealth::State::kDisconnected, "not connected"};
+  }
 
   // Reading the fault/blocked registers also Mark()s freshness on success, so
   // compute the freshness baseline afterwards.
   auto err = impl_->GetErrorCode();
   auto blocked = impl_->IsMotorBlocked();
 
-  if (err.ok() && err.value != MotorAkelcModbus::ErrorCode::kNoError)
-    return {hal::DeviceHealth::State::kFault, ErrorToString(err.value)};
-  if (blocked.ok() && blocked.value)
-    return {hal::DeviceHealth::State::kFault, "motor blocked"};
-
-  return hal::HealthFromFreshness(true, impl_->freshness());
+  hal::DeviceHealth health;
+  if (err.ok() && err.value != MotorAkelcModbus::ErrorCode::kNoError) {
+    health = {hal::DeviceHealth::State::kFault, ErrorToString(err.value)};
+  } else if (blocked.ok() && blocked.value) {
+    health = {hal::DeviceHealth::State::kFault, "motor blocked"};
+  } else {
+    health = hal::HealthFromFreshness(true, impl_->freshness());
+  }
+  // Publish the feedback age already tracked by the freshness monitor, and
+  // the health state on transitions only (both no-ops without a backend).
+  if (impl_->freshness().EverUpdated()) {
+    data_age_ms_.Set(std::chrono::duration<double, std::milli>(
+                         impl_->freshness().Age())
+                         .count());
+  }
+  health_reporter_.Update(health);
+  return health;
 }
 
 hal::Status MotorAkelc::Stop() {

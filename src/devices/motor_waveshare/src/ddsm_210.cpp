@@ -62,17 +62,19 @@ hal::Status Ddsm210::Connect() {
     ProcessFeedback(data, bufsize, len);
   });
   serial_->SetErrorCallback([this](TransportStatus s) {
-    XM_WARN("Ddsm210(id={}): serial fault: {}", cfg_.id, ToString(s));
+    serial_fault_metric_.Add();
+    XM_WARN_SRC(src_, "Ddsm210(id={}): serial fault: {}", cfg_.id, ToString(s));
     connected_.store(false);
   });
 
   if (!serial_->Open() && !serial_->IsOpened()) {
-    XM_ERROR("Ddsm210(id={}): failed to open serial '{}'", cfg_.id, cfg_.bus);
+    XM_ERROR_SRC(src_, "Ddsm210(id={}): failed to open serial '{}'", cfg_.id,
+                 cfg_.bus);
     return hal::Status::kIoError;
   }
   freshness_.Reset();
   connected_.store(true);
-  XM_INFO("Ddsm210(id={}): connected on '{}'", cfg_.id, cfg_.bus);
+  XM_INFO_SRC(src_, "Ddsm210(id={}): connected on '{}'", cfg_.id, cfg_.bus);
   return hal::Status::kOk;
 }
 
@@ -82,7 +84,8 @@ void Ddsm210::Disconnect() {
   if (serial_) serial_->Close();
   connected_.store(false);
   freshness_.Reset();
-  XM_INFO("Ddsm210(id={}): disconnected", cfg_.id);
+  health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
+  XM_INFO_SRC(src_, "Ddsm210(id={}): disconnected", cfg_.id);
 }
 
 bool Ddsm210::IsConnected() const {
@@ -93,9 +96,16 @@ hal::DeviceHealth Ddsm210::Health() const {
   auto h = hal::HealthFromFreshness(IsConnected(), freshness_);
   const uint8_t err = raw_feedback_.odom_feedback.error_code;
   if (h.state == hal::DeviceHealth::State::kOk && err != 0) {
-    return {hal::DeviceHealth::State::kFault,
-            "error_code=0x" + std::to_string(static_cast<int>(err))};
+    h = {hal::DeviceHealth::State::kFault,
+         "error_code=0x" + std::to_string(static_cast<int>(err))};
   }
+  // Publish the feedback age already tracked by the freshness monitor, and
+  // the health state on transitions only (both no-ops without a backend).
+  if (IsConnected() && freshness_.EverUpdated()) {
+    data_age_ms_.Set(
+        std::chrono::duration<double, std::milli>(freshness_.Age()).count());
+  }
+  health_reporter_.Update(h);
   return h;
 }
 
@@ -179,7 +189,7 @@ int32_t Ddsm210::GetEncoderCount() const {
 hal::Status Ddsm210::SetMode(Mode mode, uint32_t timeout_ms) {
   if (mode != Mode::kOpenLoop && mode != Mode::kSpeed &&
       mode != Mode::kPosition) {
-    XM_WARN("Ddsm210::SetMode: invalid mode");
+    XM_WARN_SRC(src_, "Ddsm210::SetMode: invalid mode");
     return hal::Status::kInvalidArgument;
   }
   if (!IsConnected()) return hal::Status::kNotConnected;
@@ -196,13 +206,13 @@ hal::Status Ddsm210::SetMode(Mode mode, uint32_t timeout_ms) {
     std::this_thread::sleep_for(step);
     if (GetMode() == mode) return hal::Status::kOk;
   }
-  XM_WARN("Ddsm210::SetMode: mode not confirmed within timeout");
+  XM_WARN_SRC(src_, "Ddsm210::SetMode: mode not confirmed within timeout");
   return hal::Status::kTimeout;
 }
 
 hal::Status Ddsm210::SetMotorId(uint8_t id, uint32_t timeout_ms) {
   if (id == 0xaa) {
-    XM_WARN("Ddsm210::SetMotorId: 0xaa is reserved for broadcast");
+    XM_WARN_SRC(src_, "Ddsm210::SetMotorId: 0xaa is reserved for broadcast");
     return hal::Status::kInvalidArgument;
   }
   if (!IsConnected()) return hal::Status::kNotConnected;
@@ -261,6 +271,7 @@ void Ddsm210::ProcessFeedback(uint8_t* data, size_t /*bufsize*/, size_t len) {
       rx_buffer_.Read(frame, 10);
     } else {
       // incomplete/invalid frame, discard the first byte and try again
+      frame_error_metric_.Add();  // one per discarded resync byte
       rx_buffer_.Read(frame, 1);
     }
   }

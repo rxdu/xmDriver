@@ -14,6 +14,7 @@
 #include <memory>
 #include <functional>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/transport/can_interface.hpp"
 #include "xmdriver/transport/can_frame.hpp"
 #include "xmdriver/transport/transport_status.hpp"
@@ -69,7 +70,16 @@ class VescCanInterface {
   StateUpdatedCallback state_updated_callback_;
   ErrorCallback error_callback_;
 
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Shares the "driver.vesc" source with VescMotor.
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.vesc");
+  telemetry::Counter tx_error_metric_ =
+      telemetry::GetCounter("driver.vesc.tx_error_count");
+
   void HandleCanFrame(const CanFrame &frame);
+  // Send a command frame, count+log any transport failure, and hand the status
+  // back so the caller can map it onto hal::Status. Never silently dropped.
+  TransportStatus SendCmd(const CanFrame &frame, const char *what);
 };
 }  // namespace xmotion
 

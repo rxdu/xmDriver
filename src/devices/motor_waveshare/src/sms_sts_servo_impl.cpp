@@ -20,6 +20,7 @@
 #include "SCServo.h"
 
 #include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmbase/telemetry/telemetry.hpp"
 
 namespace xmotion {
@@ -55,14 +56,16 @@ class SmsStsServo::Impl {
     {
       std::lock_guard<std::mutex> lk(bus_mtx_);
       if (!sm_st_.begin(cfg_.baud, cfg_.bus.c_str())) {
-        XM_ERROR("SmsStsServo(id={}): failed to open '{}'", cfg_.id, cfg_.bus);
+        XM_ERROR_SRC(src_, "SmsStsServo(id={}): failed to open '{}'", cfg_.id,
+                     cfg_.bus);
         return hal::Status::kIoError;
       }
     }
     freshness_.Reset();
     connected_.store(true);
     StartRefresh();
-    XM_INFO("SmsStsServo(id={}): connected on '{}'", cfg_.id, cfg_.bus);
+    XM_INFO_SRC(src_, "SmsStsServo(id={}): connected on '{}'", cfg_.id,
+                cfg_.bus);
     return hal::Status::kOk;
   }
 
@@ -76,24 +79,33 @@ class SmsStsServo::Impl {
     }
     connected_.store(false);
     freshness_.Reset();
-    XM_INFO("SmsStsServo(id={}): disconnected", cfg_.id);
+    health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
+    XM_INFO_SRC(src_, "SmsStsServo(id={}): disconnected", cfg_.id);
   }
 
   bool IsConnected() const { return connected_.load(); }
 
   hal::DeviceHealth Health() const {
     auto h = hal::HealthFromFreshness(connected_.load(), freshness_);
-    if (h.state != hal::DeviceHealth::State::kOk) return h;
-    std::lock_guard<std::mutex> lk(snap_mtx_);
-    if (servo_error_ != 0) {
-      return {hal::DeviceHealth::State::kFault,
-              "servo_status=0x" + std::to_string(static_cast<int>(servo_error_))};
+    if (h.state == hal::DeviceHealth::State::kOk) {
+      std::lock_guard<std::mutex> lk(snap_mtx_);
+      if (servo_error_ != 0) {
+        h = {hal::DeviceHealth::State::kFault,
+             "servo_status=0x" +
+                 std::to_string(static_cast<int>(servo_error_))};
+      } else if (snap_.temperature >= kOverTempC) {
+        h = {hal::DeviceHealth::State::kFault,
+             "over_temp " +
+                 std::to_string(static_cast<int>(snap_.temperature)) + "C"};
+      }
     }
-    if (snap_.temperature >= kOverTempC) {
-      return {hal::DeviceHealth::State::kFault,
-              "over_temp " + std::to_string(static_cast<int>(snap_.temperature)) +
-                  "C"};
+    // Publish the feedback age already tracked by the freshness monitor, and
+    // the health state on transitions only (both no-ops without a backend).
+    if (connected_.load() && freshness_.EverUpdated()) {
+      data_age_ms_.Set(
+          std::chrono::duration<double, std::milli>(freshness_.Age()).count());
     }
+    health_reporter_.Update(h);
     return h;
   }
 
@@ -226,6 +238,8 @@ class SmsStsServo::Impl {
           servo_error_ = err;
         }
         freshness_.Mark();
+      } else {
+        poll_error_metric_.Add();  // feedback poll got no valid reply
       }
       std::this_thread::sleep_for(kPollPeriod);
     }
@@ -242,6 +256,15 @@ class SmsStsServo::Impl {
 
   std::thread refresh_thread_;
   std::atomic<bool> refresh_running_{false};
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Mutable members are touched from const Health().
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.sms_sts");
+  mutable telemetry::Gauge data_age_ms_ =
+      telemetry::GetGauge("driver.sms_sts.data_age_ms");
+  telemetry::Counter poll_error_metric_ =
+      telemetry::GetCounter("driver.sms_sts.poll_error_count");
+  mutable hal::HealthReporter health_reporter_{"driver.sms_sts"};
 };
 
 }  // namespace xmotion

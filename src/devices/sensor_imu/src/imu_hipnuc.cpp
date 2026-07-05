@@ -87,23 +87,24 @@ hal::Status ImuHipnuc::Connect() {
       std::bind(&ImuHipnuc::OnSerialError, this, std::placeholders::_1));
 
   if (!serial_->Open() || !serial_->IsOpened()) {
-    XM_ERROR("ImuHipnuc: failed to open serial device {} @ {} baud",
-               cfg_.device, cfg_.baud_rate);
+    XM_ERROR_SRC(src_, "ImuHipnuc: failed to open serial device {} @ {} baud",
+                 cfg_.device, cfg_.baud_rate);
     return hal::Status::kIoError;
   }
 
-  XM_INFO("ImuHipnuc: connected on {} @ {} baud", cfg_.device,
-            cfg_.baud_rate);
+  XM_INFO_SRC(src_, "ImuHipnuc: connected on {} @ {} baud", cfg_.device,
+              cfg_.baud_rate);
   return hal::Status::kOk;
 }
 
 void ImuHipnuc::Disconnect() {
   if (serial_ && serial_->IsOpened()) {
     serial_->Close();
-    XM_INFO("ImuHipnuc: disconnected from {}", cfg_.device);
+    XM_INFO_SRC(src_, "ImuHipnuc: disconnected from {}", cfg_.device);
   }
   monitor_.Reset();
   faulted_.store(false, std::memory_order_release);
+  health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
 }
 
 bool ImuHipnuc::IsConnected() const { return serial_ && serial_->IsOpened(); }
@@ -112,8 +113,15 @@ hal::DeviceHealth ImuHipnuc::Health() const {
   hal::DeviceHealth health = hal::HealthFromFreshness(IsConnected(), monitor_);
   // A transport link fault outranks a staleness downgrade.
   if (IsConnected() && faulted_.load(std::memory_order_acquire)) {
-    return {hal::DeviceHealth::State::kFault, "transport link fault"};
+    health = {hal::DeviceHealth::State::kFault, "transport link fault"};
   }
+  // Publish the sample age already tracked by the freshness monitor, and the
+  // health state on transitions only (both no-ops without a backend).
+  if (IsConnected() && monitor_.EverUpdated()) {
+    data_age_ms_.Set(
+        std::chrono::duration<double, std::milli>(monitor_.Age()).count());
+  }
+  health_reporter_.Update(health);
   return health;
 }
 
@@ -155,7 +163,9 @@ void ImuHipnuc::OnSerialData(std::uint8_t *data, std::size_t /*bufsize*/,
       // drop it: count and log so a flaky link is observable.
       const std::uint64_t n =
           parse_error_count_.fetch_add(1, std::memory_order_relaxed) + 1;
-      XM_DEBUG("ImuHipnuc: parse error on {} (total {})", cfg_.device, n);
+      parse_error_metric_.Add();
+      XM_DEBUG_SRC(src_, "ImuHipnuc: parse error on {} (total {})", cfg_.device,
+                   n);
     }
     // rc == 0: frame still accumulating; nothing to do.
   }
@@ -163,8 +173,9 @@ void ImuHipnuc::OnSerialData(std::uint8_t *data, std::size_t /*bufsize*/,
 
 void ImuHipnuc::OnSerialError(TransportStatus status) {
   faulted_.store(true, std::memory_order_release);
-  XM_ERROR("ImuHipnuc: serial link fault on {}: {}", cfg_.device,
-             ToString(status));
+  link_fault_metric_.Add();
+  XM_ERROR_SRC(src_, "ImuHipnuc: serial link fault on {}: {}", cfg_.device,
+               ToString(status));
 }
 
 }  // namespace xmotion

@@ -26,7 +26,9 @@
 #include <memory>
 #include <string>
 
+#include "xmbase/telemetry/telemetry.hpp"
 #include "xmdriver/hal/freshness.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmdriver/hal/motor_controller.hpp"
 #include "xmdriver/hal/motor_factory.hpp"
 #include "xmdriver/transport/serial_interface.hpp"
@@ -100,6 +102,18 @@ class Ddsm210 final : public hal::Motor,
   Ddsm210Frame::RawFeedback raw_feedback_;
   hal::FreshnessMonitor freshness_;
   std::atomic<bool> id_set_ack_received_{false};
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Mutable members are touched from const Health().
+  telemetry::EventSource src_ = telemetry::GetEventSource("driver.ddsm210");
+  mutable telemetry::Gauge data_age_ms_ =
+      telemetry::GetGauge("driver.ddsm210.data_age_ms");
+  telemetry::Counter serial_fault_metric_ =
+      telemetry::GetCounter("driver.ddsm210.serial_fault_count");
+  // Counts bytes discarded while re-synchronizing on an invalid RX frame.
+  telemetry::Counter frame_error_metric_ =
+      telemetry::GetCounter("driver.ddsm210.frame_error_count");
+  mutable hal::HealthReporter health_reporter_{"driver.ddsm210"};
 };
 
 // Explicit registration for static-library linkage (a static self-registrar can

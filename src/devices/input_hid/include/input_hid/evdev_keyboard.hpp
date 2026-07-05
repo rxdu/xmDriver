@@ -26,6 +26,8 @@
 #include <string>
 
 #include "input_hid/details/keyboard_mapping.hpp"
+#include "xmbase/telemetry/telemetry.hpp"
+#include "xmdriver/hal/health_telemetry.hpp"
 #include "xmdriver/hal/keyboard.hpp"
 
 struct input_event;
@@ -71,6 +73,15 @@ class EvdevKeyboard final : public hal::Keyboard {
   KeyEventCallback key_cb_;
 
   std::atomic<bool> connected_{false};
+
+  // Telemetry (observability only; handles registered once, no-op when no
+  // backend is bound). Health transitions are reported where connected_
+  // changes (Connect/Disconnect/hot-unplug), never per-sample.
+  telemetry::EventSource src_ =
+      telemetry::GetEventSource("driver.evdev_keyboard");
+  telemetry::Counter hot_unplug_metric_ =
+      telemetry::GetCounter("driver.evdev_keyboard.hot_unplug_count");
+  hal::HealthReporter health_reporter_{"driver.evdev_keyboard"};
 };
 
 }  // namespace xmotion
