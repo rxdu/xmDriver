@@ -36,7 +36,7 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
 
   struct serial_struct serial;
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    XM_ERROR("TIOCGSERIAL failed on {}: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_, "TIOCGSERIAL failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
@@ -45,23 +45,24 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
   serial.custom_divisor = serial.baud_base / baudrate;
 
   if (serial.custom_divisor == 0) {
-    XM_ERROR("Invalid custom divisor for baud rate {}", baudrate);
+    XM_ERROR_SRC(src_, "Invalid custom divisor for baud rate {}", baudrate);
     return false;
   }
 
   if (ioctl(fd, TIOCSSERIAL, &serial) < 0) {
-    XM_ERROR("TIOCSSERIAL failed on {}: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_, "TIOCSSERIAL failed on {}: {}", port_, strerror(errno));
     return false;
   }
 
   // Verify the settings
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    XM_ERROR("TIOCGSERIAL (verify) failed on {}: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_, "TIOCGSERIAL (verify) failed on {}: {}", port_,
+                 strerror(errno));
     return false;
   }
 
-  XM_INFO("Changed baudrate on {} to {} (divisor {}, base {})", port_,
-            baudrate, serial.custom_divisor, serial.baud_base);
+  XM_INFO_SRC(src_, "Changed baudrate on {} to {} (divisor {}, base {})",
+              port_, baudrate, serial.custom_divisor, serial.baud_base);
 
   return true;
 }
@@ -108,9 +109,9 @@ bool AsyncSerial::Open() {
 #endif
 
     port_opened_ = true;
-    XM_INFO("Serial port opened: {}@{}", port_, baud_rate_);
+    XM_INFO_SRC(src_, "Serial port opened: {}@{}", port_, baud_rate_);
   } catch (std::system_error &e) {
-    XM_ERROR("Failed to open serial port {}: {}", port_, e.what());
+    XM_ERROR_SRC(src_, "Failed to open serial port {}: {}", port_, e.what());
     return false;
   }
 
@@ -153,9 +154,11 @@ void AsyncSerial::HandleError(TransportStatus reason) {
     std::lock_guard<std::recursive_mutex> lock(tx_mutex_);
     tx_rbuf_.Reset();
     tx_in_progress_ = false;
+    tx_buffer_bytes_.Set(0.0);
   }
   if (was_open && reason != TransportStatus::kOk) {
-    XM_WARN("Serial port {} faulted: {}", port_, ToString(reason));
+    fault_metric_.Add();
+    XM_WARN_SRC(src_, "Serial port {} faulted: {}", port_, ToString(reason));
     if (err_cb_) err_cb_(reason);
   }
 }
@@ -192,6 +195,7 @@ void AsyncSerial::WriteToPort(bool check_if_busy) {
   tx_in_progress_ = true;
   std::vector<uint8_t> data(tx_rbuf_.GetOccupiedSize());
   auto len = tx_rbuf_.Read(data, tx_rbuf_.GetOccupiedSize());
+  tx_buffer_bytes_.Set(static_cast<double>(tx_rbuf_.GetOccupiedSize()));
   std::memcpy(tx_buf_, data.data(), len);
   serial_port_.async_write_some(
       asio::buffer(tx_buf_, len),
@@ -219,12 +223,15 @@ TransportStatus AsyncSerial::SendBytes(const uint8_t *bytes, size_t length) {
   std::lock_guard<std::recursive_mutex> lock(tx_mutex_);
   if (tx_rbuf_.GetFreeSize() < length) {
     // Bounded TX buffer full — report backpressure instead of throwing.
-    XM_WARN("Serial TX buffer full on {} ({} bytes free < {}), dropping",
-              port_, tx_rbuf_.GetFreeSize(), length);
+    tx_drop_metric_.Add();
+    XM_WARN_SRC(src_,
+                "Serial TX buffer full on {} ({} bytes free < {}), dropping",
+                port_, tx_rbuf_.GetFreeSize(), length);
     return TransportStatus::kQueueFull;
   }
   std::vector<uint8_t> data(bytes, bytes + length);
   tx_rbuf_.Write(data, length);
+  tx_buffer_bytes_.Set(static_cast<double>(tx_rbuf_.GetOccupiedSize()));
   auto self = shared_from_this();
   asio::post(IoService::Instance().context(),
              [self] { self->WriteToPort(true); });

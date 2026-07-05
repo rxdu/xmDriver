@@ -57,6 +57,11 @@ void ModbusRtuPort::Close() {
 
 bool ModbusRtuPort::IsOpened() const { return (ctx_ != nullptr); }
 
+int ModbusRtuPort::CountIfError(int ret) {
+  if (ret < 0) io_error_metric_.Add();
+  return ret;
+}
+
 bool ModbusRtuPort::SetResponseTimeout(int sec, int usec) {
   if (ctx_ == nullptr) {
     XM_ERROR("Modbus context not initialized");
@@ -91,49 +96,49 @@ bool ModbusRtuPort::SelectDevice(uint8_t device_id) {
 int ModbusRtuPort::ReadCoils(uint8_t device_id, uint16_t addr,
                              uint16_t quantity, uint8_t *data) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_read_bits(ctx_, addr, quantity, data);
+  return CountIfError(modbus_read_bits(ctx_, addr, quantity, data));
 }
 
 int ModbusRtuPort::WriteSingleCoil(uint8_t device_id, uint16_t addr,
                                    int status) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_write_bit(ctx_, addr, status);
+  return CountIfError(modbus_write_bit(ctx_, addr, status));
 }
 
 int ModbusRtuPort::WriteMultipleCoils(uint8_t device_id, uint16_t addr,
                                       uint16_t quantity, const uint8_t *data) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_write_bits(ctx_, addr, quantity, data);
+  return CountIfError(modbus_write_bits(ctx_, addr, quantity, data));
 }
 
 int ModbusRtuPort::ReadDiscreteInputs(uint8_t device_id, uint16_t addr,
                                       uint16_t quantity, uint8_t *data) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_read_input_bits(ctx_, addr, quantity, data);
+  return CountIfError(modbus_read_input_bits(ctx_, addr, quantity, data));
 }
 
 int ModbusRtuPort::ReadInputRegisters(uint8_t device_id, uint16_t addr,
                                       uint16_t quantity, uint16_t *data) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_read_input_registers(ctx_, addr, quantity, data);
+  return CountIfError(modbus_read_input_registers(ctx_, addr, quantity, data));
 }
 
 int ModbusRtuPort::ReadHoldingRegisters(uint8_t device_id, uint16_t addr,
                                         uint16_t quantity, uint16_t *data) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_read_registers(ctx_, addr, quantity, data);
+  return CountIfError(modbus_read_registers(ctx_, addr, quantity, data));
 }
 
 int ModbusRtuPort::WriteSingleRegister(uint8_t device_id, uint16_t addr,
                                        uint16_t value) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_write_register(ctx_, addr, value);
+  return CountIfError(modbus_write_register(ctx_, addr, value));
 }
 
 int ModbusRtuPort::WriteMultipleRegisters(uint8_t device_id, uint16_t addr,
                                           uint16_t quantity,
                                           const uint16_t *data) {
   if (ctx_ == nullptr || !SelectDevice(device_id)) return -1;
-  return modbus_write_registers(ctx_, addr, quantity, data);
+  return CountIfError(modbus_write_registers(ctx_, addr, quantity, data));
 }
 }  // namespace xmotion
