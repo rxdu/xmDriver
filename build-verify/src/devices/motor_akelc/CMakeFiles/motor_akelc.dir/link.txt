@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libmotor_akelc.a CMakeFiles/motor_akelc.dir/src/motor_akelc.cpp.o CMakeFiles/motor_akelc.dir/src/motor_akelc_modbus.cpp.o
+/usr/bin/ranlib ../../../lib/libmotor_akelc.a

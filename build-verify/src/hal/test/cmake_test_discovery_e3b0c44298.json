@@ -1,0 +1,82 @@
+{
+  "tests": 14,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "ActuatorGroupTest",
+      "tests": 14,
+      "testsuite": [
+        {
+          "name": "SpeedBroadcastFansOutInRegistrationOrder",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 177
+        },
+        {
+          "name": "SpeedPerMemberFanOutMapsByIndexInOrder",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 188
+        },
+        {
+          "name": "SpeedPerMemberSizeMismatchCommandsNothing",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 202
+        },
+        {
+          "name": "UnitPassthroughWithSimMotors",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 214
+        },
+        {
+          "name": "PartialFailureAggregatesFirstFailureAndContinues",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 231
+        },
+        {
+          "name": "SimMotorOutOfRangeStillCommandsRemainingMembers",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 244
+        },
+        {
+          "name": "GetSpeedAveragesMembers",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 259
+        },
+        {
+          "name": "GetSpeedFailsInsteadOfAveragingErrorZeros",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 272
+        },
+        {
+          "name": "EmptyGroupReadIsAnErrorNotDivideByZero",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 286
+        },
+        {
+          "name": "StopFansToEveryMemberEvenAfterFailure",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 296
+        },
+        {
+          "name": "StopForcesSimMotorsToSafeState",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 306
+        },
+        {
+          "name": "PositionGroupMirrorsSpeedGroupSemantics",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 320
+        },
+        {
+          "name": "FaultCounterCountsEveryFailedMemberCommand",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 357
+        },
+        {
+          "name": "WarnFiresOncePerFailureEpisode",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/hal\/test\/test_actuator_group.cpp",
+          "line": 375
+        }
+      ]
+    }
+  ]
+}

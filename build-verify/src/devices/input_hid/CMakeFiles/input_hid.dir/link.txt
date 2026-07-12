@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libinput_hid.a CMakeFiles/input_hid.dir/src/evdev_reader.cpp.o CMakeFiles/input_hid.dir/src/evdev_translate.cpp.o CMakeFiles/input_hid.dir/src/evdev_joystick.cpp.o CMakeFiles/input_hid.dir/src/evdev_keyboard.cpp.o CMakeFiles/input_hid.dir/src/keyboard_mapping.cpp.o
+/usr/bin/ranlib ../../../lib/libinput_hid.a

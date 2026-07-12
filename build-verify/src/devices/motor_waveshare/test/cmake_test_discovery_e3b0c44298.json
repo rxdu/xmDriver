@@ -1,0 +1,87 @@
+{
+  "tests": 15,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "SmsStsServoArrayTest",
+      "tests": 15,
+      "testsuite": [
+        {
+          "name": "RegistersWithFactoryAndParsesParams",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 286
+        },
+        {
+          "name": "FactoryRejectsMalformedParams",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 306
+        },
+        {
+          "name": "ConnectRejectsBadIdLists",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 325
+        },
+        {
+          "name": "ConnectFailsOnUnopenablePort",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 346
+        },
+        {
+          "name": "DisconnectedCommandsAndReadsRejected",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 353
+        },
+        {
+          "name": "PollsFeedbackPerIdAndFlagsAbsentId",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 366
+        },
+        {
+          "name": "UnknownIdRejected",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 402
+        },
+        {
+          "name": "SetPositionWritesGoalFrameWithOffsetRemap",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 418
+        },
+        {
+          "name": "CommandToAbsentIdReportsIoError",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 447
+        },
+        {
+          "name": "BatchSyncWriteIsOneTransactionForAllIds",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 457
+        },
+        {
+          "name": "BatchValidatesBeforeAnythingHitsTheWire",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 483
+        },
+        {
+          "name": "StopFansOutZeroSpeedToEveryId",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 501
+        },
+        {
+          "name": "EnableTorquePerIdAndAll",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 524
+        },
+        {
+          "name": "DisconnectCommandsSafeStateBeforeClosing",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 547
+        },
+        {
+          "name": "MemberRefsComposeIntoActuatorGroups",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_waveshare\/test\/test_sms_sts_array.cpp",
+          "line": 568
+        }
+      ]
+    }
+  ]
+}

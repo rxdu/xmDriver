@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libasync_port.a CMakeFiles/async_port.dir/src/async_serial.cpp.o CMakeFiles/async_port.dir/src/async_can.cpp.o
+/usr/bin/ranlib ../../../lib/libasync_port.a

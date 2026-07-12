@@ -1,0 +1,37 @@
+{
+  "tests": 5,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "SbusReceiverTest",
+      "tests": 5,
+      "testsuite": [
+        {
+          "name": "DisconnectedReadReportsNotConnected",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/input_sbus\/test\/test_sbus_receiver.cpp",
+          "line": 73
+        },
+        {
+          "name": "ValidFrameYieldsFreshReadAndCallback",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/input_sbus\/test\/test_sbus_receiver.cpp",
+          "line": 83
+        },
+        {
+          "name": "LinkLossYieldsTimeoutAndFailsafeCallback",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/input_sbus\/test\/test_sbus_receiver.cpp",
+          "line": 110
+        },
+        {
+          "name": "ReceiverFrameLossFlagDegradesHealth",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/input_sbus\/test\/test_sbus_receiver.cpp",
+          "line": 135
+        },
+        {
+          "name": "ScaleChannelValueGuardsDivideByZero",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/input_sbus\/test\/test_sbus_receiver.cpp",
+          "line": 149
+        }
+      ]
+    }
+  ]
+}

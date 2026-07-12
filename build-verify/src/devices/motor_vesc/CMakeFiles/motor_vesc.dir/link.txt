@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libmotor_vesc.a CMakeFiles/motor_vesc.dir/src/vesc_can_interface.cpp.o CMakeFiles/motor_vesc.dir/src/vesc_status_packet.cpp.o CMakeFiles/motor_vesc.dir/src/vesc_cmd_packet.cpp.o CMakeFiles/motor_vesc.dir/src/vesc_motor.cpp.o
+/usr/bin/ranlib ../../../lib/libmotor_vesc.a

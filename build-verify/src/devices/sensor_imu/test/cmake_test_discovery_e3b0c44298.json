@@ -1,0 +1,32 @@
+{
+  "tests": 4,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "ImuHipnucTest",
+      "tests": 4,
+      "testsuite": [
+        {
+          "name": "ReadWhileDisconnectedIsNotConnected",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/sensor_imu\/test\/test_imu_hipnuc.cpp",
+          "line": 45
+        },
+        {
+          "name": "ConnectToMissingDeviceFailsCleanly",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/sensor_imu\/test\/test_imu_hipnuc.cpp",
+          "line": 56
+        },
+        {
+          "name": "ConnectedButNoFrameIsStaleTimeout",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/sensor_imu\/test\/test_imu_hipnuc.cpp",
+          "line": 69
+        },
+        {
+          "name": "SetSampleCallbackDoesNotFireWithoutFrames",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/sensor_imu\/test\/test_imu_hipnuc.cpp",
+          "line": 83
+        }
+      ]
+    }
+  ]
+}

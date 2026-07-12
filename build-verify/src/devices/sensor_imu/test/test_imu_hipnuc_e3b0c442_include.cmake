@@ -1,0 +1,5 @@
+if(EXISTS "/tmp/claude-1000/-home-rdu-RduWs-robotics-toolbox-xmotion/9300b8f4-022a-4efc-9161-e3f8f9e8bea0/scratchpad/driver-bus/build-verify/src/devices/sensor_imu/test/test_imu_hipnuc_e3b0c442_tests.cmake")
+  include("/tmp/claude-1000/-home-rdu-RduWs-robotics-toolbox-xmotion/9300b8f4-022a-4efc-9161-e3f8f9e8bea0/scratchpad/driver-bus/build-verify/src/devices/sensor_imu/test/test_imu_hipnuc_e3b0c442_tests.cmake")
+else()
+  add_test(test_imu_hipnuc_NOT_BUILT test_imu_hipnuc_NOT_BUILT)
+endif()

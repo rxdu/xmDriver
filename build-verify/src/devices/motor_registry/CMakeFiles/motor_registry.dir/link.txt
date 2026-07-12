@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libmotor_registry.a CMakeFiles/motor_registry.dir/src/register_all.cpp.o
+/usr/bin/ranlib ../../../lib/libmotor_registry.a

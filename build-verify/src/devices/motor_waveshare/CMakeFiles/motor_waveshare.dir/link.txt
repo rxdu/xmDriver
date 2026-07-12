@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libmotor_waveshare.a CMakeFiles/motor_waveshare.dir/src/ddsm_210.cpp.o CMakeFiles/motor_waveshare.dir/src/ddsm_210_array.cpp.o CMakeFiles/motor_waveshare.dir/src/ddsm_210_frame.cpp.o CMakeFiles/motor_waveshare.dir/src/sms_sts_servo.cpp.o CMakeFiles/motor_waveshare.dir/src/sms_sts_servo_array.cpp.o CMakeFiles/motor_waveshare.dir/src/servo/SMS_STS.cpp.o CMakeFiles/motor_waveshare.dir/src/servo/SCS.cpp.o CMakeFiles/motor_waveshare.dir/src/servo/SCSerial.cpp.o
+/usr/bin/ranlib ../../../lib/libmotor_waveshare.a

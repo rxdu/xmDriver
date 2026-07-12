@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_sbus.dir/test_sbus.cpp.o -o ../../../../bin/test_sbus  ../../../../lib/libasync_port.a ../../../../lib/libinput_sbus.a ../../../../lib/libasync_port.a ../../../../lib/libxmBase.a

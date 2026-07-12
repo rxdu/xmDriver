@@ -1,0 +1,98 @@
+{
+  "tests": 16,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "VescMotorTest",
+      "tests": 4,
+      "testsuite": [
+        {
+          "name": "RegistersWithFactory",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 114
+        },
+        {
+          "name": "ExposesSpeedCurrentBrakeButNotPosition",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 128
+        },
+        {
+          "name": "CommandsAndReadsRejectedWhenDisconnected",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 137
+        },
+        {
+          "name": "ConnectToNonexistentBusFailsCleanly",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 152
+        }
+      ]
+    },
+    {
+      "name": "VescMotorFakeTest",
+      "tests": 12,
+      "testsuite": [
+        {
+          "name": "ConnectFailsWhenTransportWontOpen",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 162
+        },
+        {
+          "name": "SetSpeedRejectsNonFinite",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 170
+        },
+        {
+          "name": "SetCurrentRejectsNonFinite",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 181
+        },
+        {
+          "name": "SetSpeedInRangeSendsExactCommand",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 192
+        },
+        {
+          "name": "SetSpeedClampsAndReportsOutOfRange",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 200
+        },
+        {
+          "name": "SetCurrentClampsAndReportsOutOfRange",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 212
+        },
+        {
+          "name": "ReportsTransportFailureOnSend",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 228
+        },
+        {
+          "name": "StaleReadUntilStatusFrameArrives",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 235
+        },
+        {
+          "name": "StatusFrameForOtherIdIsIgnored",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 252
+        },
+        {
+          "name": "StopSendsZeroCurrent",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 260
+        },
+        {
+          "name": "DisconnectCommandsSafeStateThenCloses",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 268
+        },
+        {
+          "name": "BusFaultSurfacesInHealth",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/devices\/motor_vesc\/test\/test_vesc_motor.cpp",
+          "line": 281
+        }
+      ]
+    }
+  ]
+}

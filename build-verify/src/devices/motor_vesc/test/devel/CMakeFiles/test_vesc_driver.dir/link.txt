@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_vesc_driver.dir/test_vesc_driver.cpp.o -o ../../../../../bin/test_vesc_driver  ../../../../../lib/libmotor_vesc.a ../../../../../lib/libasync_port.a ../../../../../lib/libxmBase.a

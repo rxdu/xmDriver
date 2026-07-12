@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../../lib/libsensor_imu.a CMakeFiles/sensor_imu.dir/src/ch_serial.c.o CMakeFiles/sensor_imu.dir/src/imu_hipnuc.cpp.o
+/usr/bin/ranlib ../../../lib/libsensor_imu.a

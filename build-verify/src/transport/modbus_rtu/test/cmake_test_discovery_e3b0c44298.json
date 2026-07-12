@@ -1,0 +1,63 @@
+{
+  "tests": 9,
+  "name": "AllTests",
+  "testsuites": [
+    {
+      "name": "ModbusRtuPortLifecycle",
+      "tests": 7,
+      "testsuite": [
+        {
+          "name": "ConstructDestructNoOpen",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 39
+        },
+        {
+          "name": "NotOpenedAfterConstruction",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 45
+        },
+        {
+          "name": "OpenBogusDeviceFailsClean",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 52
+        },
+        {
+          "name": "CloseWithoutOpenIsSafe",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 59
+        },
+        {
+          "name": "DoubleCloseIsSafe",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 67
+        },
+        {
+          "name": "ReopenAfterCloseNoLeak",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 77
+        },
+        {
+          "name": "SetResponseTimeoutWhileClosedFails",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 89
+        }
+      ]
+    },
+    {
+      "name": "ModbusRtuPortReadWrite",
+      "tests": 2,
+      "testsuite": [
+        {
+          "name": "ReadWriteWhileNotConnectedReturnsError",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 96
+        },
+        {
+          "name": "ReadWriteAfterFailedOpenReturnsError",
+          "file": "\/tmp\/claude-1000\/-home-rdu-RduWs-robotics-toolbox-xmotion\/9300b8f4-022a-4efc-9161-e3f8f9e8bea0\/scratchpad\/driver-bus\/src\/transport\/modbus_rtu\/test\/utest_modbus_rtu.cpp",
+          "line": 117
+        }
+      ]
+    }
+  ]
+}

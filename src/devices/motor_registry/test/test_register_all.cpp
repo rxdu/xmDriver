@@ -19,7 +19,9 @@ TEST(RegisterAllMotors, RegistersEveryBundledType) {
   EXPECT_TRUE(factory.IsRegistered("vesc"));
   EXPECT_TRUE(factory.IsRegistered("akelc"));
   EXPECT_TRUE(factory.IsRegistered("ddsm210"));
+  EXPECT_TRUE(factory.IsRegistered("ddsm210_array"));
   EXPECT_TRUE(factory.IsRegistered("sms_sts"));
+  EXPECT_TRUE(factory.IsRegistered("sms_sts_array"));
   EXPECT_TRUE(factory.IsRegistered("sim"));
 }
 
