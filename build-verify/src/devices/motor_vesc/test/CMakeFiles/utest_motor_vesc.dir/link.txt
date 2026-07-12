@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/utest_motor_vesc.dir/utest_vesc_packet.cpp.o -o ../../../../bin/utest_motor_vesc  ../../../../lib/libmotor_vesc.a ../../../../lib/libgtest.a ../../../../lib/libgmock.a ../../../../lib/libgtest_main.a ../../../../lib/libasync_port.a ../../../../lib/libxmBase.a ../../../../lib/libgtest.a

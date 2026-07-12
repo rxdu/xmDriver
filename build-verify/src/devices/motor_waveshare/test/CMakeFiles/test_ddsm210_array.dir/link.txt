@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_ddsm210_array.dir/test_ddsm210_array.cpp.o -o ../../../../bin/test_ddsm210_array  ../../../../lib/libmotor_waveshare.a ../../../../lib/libgtest.a ../../../../lib/libgmock.a ../../../../lib/libgtest_main.a ../../../../lib/libasync_port.a ../../../../lib/libxmBase.a ../../../../lib/libgtest.a

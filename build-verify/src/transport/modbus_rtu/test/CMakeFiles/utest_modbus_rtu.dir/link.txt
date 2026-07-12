@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/utest_modbus_rtu.dir/utest_modbus_rtu.cpp.o -o ../../../../bin/utest_modbus_rtu  ../../../../lib/libmodbus_rtu.a ../../../../lib/libgtest.a ../../../../lib/libgmock.a ../../../../lib/libgtest_main.a ../../../../lib/libxmBase.a /usr/lib/x86_64-linux-gnu/libmodbus.so ../../../../lib/libgtest.a

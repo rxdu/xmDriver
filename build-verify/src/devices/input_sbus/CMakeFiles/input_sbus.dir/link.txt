@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../../lib/libinput_sbus.a CMakeFiles/input_sbus.dir/src/sbus_decoder.cpp.o CMakeFiles/input_sbus.dir/src/sbus_receiver.cpp.o
-/usr/bin/ranlib ../../../lib/libinput_sbus.a

@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_health_telemetry.dir/test_health_telemetry.cpp.o -o ../../../bin/test_health_telemetry  ../../../lib/libgtest.a ../../../lib/libgmock.a ../../../lib/libgtest_main.a ../../../lib/libgtest.a ../../../lib/libxmBase.a

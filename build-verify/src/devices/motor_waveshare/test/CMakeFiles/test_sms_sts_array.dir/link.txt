@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_sms_sts_array.dir/test_sms_sts_array.cpp.o -o ../../../../bin/test_sms_sts_array  ../../../../lib/libmotor_waveshare.a -lutil ../../../../lib/libgtest.a ../../../../lib/libgmock.a ../../../../lib/libgtest_main.a ../../../../lib/libasync_port.a ../../../../lib/libxmBase.a ../../../../lib/libgtest.a

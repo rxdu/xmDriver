@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_hipnuc.dir/test_hipnuc.cpp.o -o ../../../../../bin/test_hipnuc  ../../../../../lib/libsensor_imu.a ../../../../../lib/libasync_port.a ../../../../../lib/libxmBase.a

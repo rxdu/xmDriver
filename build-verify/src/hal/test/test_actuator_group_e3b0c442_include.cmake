@@ -1,5 +1,0 @@
-if(EXISTS "/tmp/claude-1000/-home-rdu-RduWs-robotics-toolbox-xmotion/9300b8f4-022a-4efc-9161-e3f8f9e8bea0/scratchpad/driver-bus/build-verify/src/hal/test/test_actuator_group_e3b0c442_tests.cmake")
-  include("/tmp/claude-1000/-home-rdu-RduWs-robotics-toolbox-xmotion/9300b8f4-022a-4efc-9161-e3f8f9e8bea0/scratchpad/driver-bus/build-verify/src/hal/test/test_actuator_group_e3b0c442_tests.cmake")
-else()
-  add_test(test_actuator_group_NOT_BUILT test_actuator_group_NOT_BUILT)
-endif()

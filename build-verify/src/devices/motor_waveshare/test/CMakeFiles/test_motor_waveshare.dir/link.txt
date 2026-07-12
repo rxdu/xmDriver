@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_motor_waveshare.dir/test_motor_waveshare.cpp.o -o ../../../../bin/test_motor_waveshare  ../../../../lib/libmotor_waveshare.a ../../../../lib/libgtest.a ../../../../lib/libgmock.a ../../../../lib/libgtest_main.a ../../../../lib/libasync_port.a ../../../../lib/libxmBase.a ../../../../lib/libgtest.a

@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_hal_interfaces.dir/test_hal_interfaces.cpp.o -o ../../../bin/test_hal_interfaces  ../../../lib/libgtest.a ../../../lib/libgmock.a ../../../lib/libgtest_main.a ../../../lib/libgtest.a ../../../lib/libxmBase.a

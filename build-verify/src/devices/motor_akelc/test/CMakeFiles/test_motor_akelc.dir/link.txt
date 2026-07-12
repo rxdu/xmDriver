@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/test_motor_akelc.dir/test_motor_akelc.cpp.o -o ../../../../bin/test_motor_akelc  ../../../../lib/libmotor_akelc.a ../../../../lib/libgtest.a ../../../../lib/libgmock.a ../../../../lib/libgtest_main.a ../../../../lib/libmodbus_rtu.a ../../../../lib/libxmBase.a /usr/lib/x86_64-linux-gnu/libmodbus.so ../../../../lib/libgtest.a
