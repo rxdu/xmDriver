@@ -8,7 +8,7 @@ mark_as_advanced(
     gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
 )
 
-# add unit tests. RingBuffer now lives in xmBase (xmbase/container) and is
+# add unit tests. RingBuffer lives here (async_port/ring_buffer.hpp, repatriated from xmBase at 0.5.0) and is
 # tested there; async_port only exercises it through the transport, covered by
 # the lifecycle tests below.
 add_executable(utest_async_port
