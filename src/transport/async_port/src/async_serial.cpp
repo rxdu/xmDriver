@@ -22,6 +22,12 @@
 #include "async_port/io_service.hpp"
 
 namespace xmotion {
+#if defined(__linux__)
+// Defined in serial_baud_linux.cpp (isolated TU: <asm/termbits.h> cannot share
+// this file with the glibc <termios.h> that asio includes).
+bool SetSerialBaudTermios2(int fd, unsigned baud);
+#endif
+
 AsyncSerial::AsyncSerial(const std::string &port_name, uint32_t baud_rate)
     : port_(port_name),
       serial_port_(IoService::Instance().context()),
@@ -34,9 +40,23 @@ void AsyncSerial::SetBaudRate(unsigned baudrate) { baud_rate_ = baudrate; }
 bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
   int fd = serial_port_.native_handle();
 
+  // Preferred: termios2/BOTHER — programs the literal (possibly non-standard,
+  // e.g. SBUS's 100000) rate and works on devices with no exposed UART
+  // baud_base, notably cdc_acm USB serial (/dev/ttyACM*).
+  if (SetSerialBaudTermios2(fd, baudrate)) {
+    XM_INFO_SRC(src_, "Changed baudrate on {} to {} (termios2)", port_,
+                baudrate);
+    return true;
+  }
+
+  // Fallback: legacy custom-divisor path for real 8250 UARTs / FTDI adapters
+  // that expose a baud_base but may not honor termios2.
   struct serial_struct serial;
   if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    XM_ERROR_SRC(src_, "TIOCGSERIAL failed on {}: {}", port_, strerror(errno));
+    XM_ERROR_SRC(src_,
+                 "set baud {} on {}: termios2 rejected and TIOCGSERIAL failed: "
+                 "{}",
+                 baudrate, port_, strerror(errno));
     return false;
   }
 
@@ -45,19 +65,15 @@ bool AsyncSerial::ChangeBaudRate(unsigned baudrate) {
   serial.custom_divisor = serial.baud_base / baudrate;
 
   if (serial.custom_divisor == 0) {
-    XM_ERROR_SRC(src_, "Invalid custom divisor for baud rate {}", baudrate);
+    XM_ERROR_SRC(src_,
+                 "cannot set baud {} on {}: termios2 rejected and no valid "
+                 "divisor (baud_base {})",
+                 baudrate, port_, serial.baud_base);
     return false;
   }
 
   if (ioctl(fd, TIOCSSERIAL, &serial) < 0) {
     XM_ERROR_SRC(src_, "TIOCSSERIAL failed on {}: {}", port_, strerror(errno));
-    return false;
-  }
-
-  // Verify the settings
-  if (ioctl(fd, TIOCGSERIAL, &serial) < 0) {
-    XM_ERROR_SRC(src_, "TIOCGSERIAL (verify) failed on {}: {}", port_,
-                 strerror(errno));
     return false;
   }
 
