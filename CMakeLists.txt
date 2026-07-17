@@ -22,6 +22,7 @@ option(BUILD_TESTING "Build tests" OFF)
 option(STATIC_CHECK "Enable static check" OFF)
 option(XMOTION_DEV_MODE "Development mode forces building tests" OFF)
 option(XMOTION_WERROR "Treat warnings as errors (-Wall -Wextra -Werror)" OFF)
+option(BUILD_APPS "Build device CLI apps (hardware bring-up tools)" OFF)
 
 ## Generate symbols for IDE indexer
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -121,6 +122,12 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/xmdriver_module.cmake)
 
 ## Add source directories
 add_subdirectory(src)
+
+## Device CLI apps — only when xmDriver is the top-level project (never in a
+## parent super-build that just consumes the libraries).
+if (BUILD_APPS AND CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  add_subdirectory(apps)
+endif ()
 
 ## Installation setup
 # Offer the user the choice of overriding the installation directories
