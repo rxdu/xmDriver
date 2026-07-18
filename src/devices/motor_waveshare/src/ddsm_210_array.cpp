@@ -21,8 +21,6 @@ namespace {
 constexpr double kDefaultMaxSpeedRpm = 210.0;  // DDSM-210 mechanical limit
 constexpr double kMaxPositionDeg = 360.0;
 constexpr std::uint8_t kBroadcastId = 0xaa;  // reserved by the protocol
-// Feedback arrives on every command reply; a few missed replies => stale.
-constexpr auto kFreshnessTimeout = std::chrono::milliseconds(200);
 
 constexpr double kRadToDeg = 180.0 / M_PI;
 constexpr double kDegToRad = M_PI / 180.0;
@@ -73,8 +71,9 @@ hal::Status Ddsm210Array::MemberRef::Stop() { return owner_->Stop(id_); }
 
 // --- Ddsm210Array ------------------------------------------------------------
 
-Ddsm210Array::Channel::Channel(std::uint8_t motor_id)
-    : id(motor_id), freshness(kFreshnessTimeout) {}
+Ddsm210Array::Channel::Channel(std::uint8_t motor_id,
+                               std::chrono::milliseconds freshness_timeout)
+    : id(motor_id), freshness(freshness_timeout) {}
 
 Ddsm210Array::Ddsm210Array(Config cfg) : Ddsm210Array(std::move(cfg), nullptr) {}
 
@@ -84,7 +83,7 @@ Ddsm210Array::Ddsm210Array(Config cfg, std::shared_ptr<SerialInterface> serial)
   channels_.reserve(cfg_.ids.size());
   members_.reserve(cfg_.ids.size());
   for (std::uint8_t id : cfg_.ids) {
-    channels_.push_back(std::make_unique<Channel>(id));
+    channels_.push_back(std::make_unique<Channel>(id, cfg_.feedback_timeout));
     members_.push_back(
         std::unique_ptr<MemberRef>(new MemberRef(this, id)));
   }
