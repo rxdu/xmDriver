@@ -1,0 +1,122 @@
+VERSION "mobile-base-can 1.0.0"
+
+NS_ :
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	BA_DEF_DEF_
+
+BS_:
+
+BU_ Commander Base
+
+
+BO_ 256 CMD_TWIST: 8 Commander
+ SG_ vx : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Base
+ SG_ vy : 16|16@1- (0.001,0) [-32.768|32.767] "m/s" Base
+ SG_ wz : 32|16@1- (0.001,0) [-32.768|32.767] "rad/s" Base
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Base
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Base
+
+BO_ 257 CMD_MODE: 8 Commander
+ SG_ mode : 0|8@1+ (1,0) [0|1] "" Base
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Base
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Base
+
+BO_ 258 CMD_ESTOP: 8 Commander
+ SG_ action : 0|8@1+ (1,0) [1|2] "" Base
+ SG_ clear_key : 8|16@1+ (1,0) [0|65535] "" Base
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Base
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Base
+
+BO_ 259 CMD_HEARTBEAT: 8 Commander
+ SG_ version : 0|8@1+ (1,0) [0|255] "" Base
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Base
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Base
+
+BO_ 512 STATE_STATUS: 8 Base
+ SG_ version : 0|8@1+ (1,0) [0|255] "" Commander
+ SG_ mode : 8|8@1+ (1,0) [0|3] "" Commander
+ SG_ flags : 16|8@1+ (1,0) [0|255] "" Commander
+ SG_ faults : 24|16@1+ (1,0) [0|65535] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 513 STATE_ODOM_TWIST: 8 Base
+ SG_ vx : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ vy : 16|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ wz : 32|16@1- (0.001,0) [-32.768|32.767] "rad/s" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 514 STATE_ODOM_POSE: 8 Base
+ SG_ dx : 0|16@1- (0.0001,0) [-3.2768|3.2767] "m" Commander
+ SG_ dy : 16|16@1- (0.0001,0) [-3.2768|3.2767] "m" Commander
+ SG_ dtheta : 32|16@1- (0.0001,0) [-3.2768|3.2767] "rad" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 515 STATE_CAPABILITIES: 8 Base
+ SG_ version : 0|8@1+ (1,0) [0|255] "" Commander
+ SG_ base_type : 8|8@1+ (1,0) [0|255] "" Commander
+ SG_ dof_mask : 16|8@1+ (1,0) [0|255] "" Commander
+ SG_ wheel_count : 24|8@1+ (1,0) [0|255] "" Commander
+ SG_ model_profile_id : 32|8@1+ (1,0) [0|255] "" Commander
+ SG_ model_profile_ver : 40|8@1+ (1,0) [0|255] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 516 STATE_LIMITS: 8 Base
+ SG_ max_vx : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ max_vy : 16|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ max_wz : 32|16@1- (0.001,0) [-32.768|32.767] "rad/s" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 517 STATE_BATTERY: 8 Base
+ SG_ voltage : 0|16@1+ (0.01,0) [0|655.35] "V" Commander
+ SG_ current : 16|16@1- (0.01,0) [-327.68|327.67] "A" Commander
+ SG_ soc : 32|8@1+ (1,0) [0|255] "%" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 518 STATE_FAULTS: 8 Base
+ SG_ faults : 0|32@1+ (1,0) [0|4294967295] "" Commander
+ SG_ last_fault : 32|8@1+ (1,0) [0|255] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 544 STATE_MODULE_FR: 8 Base
+ SG_ speed : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ angle : 16|16@1- (0.001,0) [-32.768|32.767] "rad" Commander
+ SG_ fault : 32|8@1+ (1,0) [0|255] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 545 STATE_MODULE_FL: 8 Base
+ SG_ speed : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ angle : 16|16@1- (0.001,0) [-32.768|32.767] "rad" Commander
+ SG_ fault : 32|8@1+ (1,0) [0|255] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 546 STATE_MODULE_RL: 8 Base
+ SG_ speed : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ angle : 16|16@1- (0.001,0) [-32.768|32.767] "rad" Commander
+ SG_ fault : 32|8@1+ (1,0) [0|255] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+BO_ 547 STATE_MODULE_RR: 8 Base
+ SG_ speed : 0|16@1- (0.001,0) [-32.768|32.767] "m/s" Commander
+ SG_ angle : 16|16@1- (0.001,0) [-32.768|32.767] "rad" Commander
+ SG_ fault : 32|8@1+ (1,0) [0|255] "" Commander
+ SG_ counter : 48|8@1+ (1,0) [0|255] "" Commander
+ SG_ crc8 : 56|8@1+ (1,0) [0|255] "" Commander
+
+CM_ BO_ 256 "Body-twist command: vx/vy/wz. Commander -> Base. Highest priority.";
+CM_ BO_ 258 "Emergency stop. action 1=engage, 2=clear (clear requires clear_key 0xC1EA).";
+CM_ BO_ 515 "Base capabilities: base_type, dof_mask, wheel_count, and active model profile.";
+CM_ SG_ 256 counter "E2E alive counter (spec S4). Not expressible as DBC semantics.";
+CM_ SG_ 256 crc8 "CRC-8/AUTOSAR over [id_lo,id_hi,data0..6] (spec S4).";
