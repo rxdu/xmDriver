@@ -22,17 +22,22 @@ add_subdirectory(transport)
 # device drivers (motors / sensors / input), grouped under src/devices/
 add_subdirectory(devices)
 
+# robot-layer drivers — a whole robot/base addressed as one entity over a bus
+# (vs. the physical-component drivers under src/devices/), grouped under src/robots/
+add_subdirectory(robots)
+
 ## Role-tier convenience targets — link a tier (xmotion::transport / ::motors /
-## ::sensors / ::input) instead of enumerating its component libraries. The
-## individual module libraries remain available for minimal-dependency consumers.
+## ::sensors / ::input / ::robots) instead of enumerating its component libraries.
+## The individual module libraries remain available for minimal-dependency consumers.
 xmdriver_add_group(transport transport_interface async_port modbus_rtu)
 xmdriver_add_group(motors    motor_akelc motor_vesc motor_waveshare motor_registry)
 xmdriver_add_group(sensors   sensor_imu)
 xmdriver_add_group(input     input_hid input_sbus)
+xmdriver_add_group(robots    mobile_base)
 
 ## Aggregate everything: consumers link a single xmotion::xmDriver.
 add_library(xmDriver INTERFACE)
-target_link_libraries(xmDriver INTERFACE hal transport motors sensors input)
+target_link_libraries(xmDriver INTERFACE hal transport motors sensors input robots)
 add_library(xmotion::xmDriver ALIAS xmDriver)
 install(TARGETS xmDriver
     EXPORT xmDriverTargets
