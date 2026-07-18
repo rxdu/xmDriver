@@ -1,19 +1,19 @@
 /*
- * Commander-side driver: command encoding (+ advancing counters), RX decode into
+ * MobileBaseCanClient (CAN realization of MobileBase): command encoding (+ counters), RX decode into
  * the freshness-gated snapshot, the not-connected / stale paths, and the
  * model-profile hook. Driven through a fake CAN bus — no hardware.
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/mobile_base_driver.hpp"
+#include "mobile_base_can/mobile_base_can_client.hpp"
 
 #include <memory>
 #include <vector>
 
 #include <gtest/gtest.h>
 
-#include "mobile_base/core_codec.hpp"
-#include "mobile_base/profiles/swerve_v1.hpp"
+#include "mobile_base_can/core_codec.hpp"
+#include "mobile_base_can/profiles/swerve_v1.hpp"
 
 using namespace xmotion;
 using namespace xmotion::mobile_base;
@@ -42,21 +42,21 @@ class FakeCan : public CanInterface {
   bool opened_ = false;
 };
 
-std::shared_ptr<FakeCan> Connected(MobileBase& base) {
+std::shared_ptr<FakeCan> Connected(MobileBaseCanClient& base) {
   auto fake = std::make_shared<FakeCan>();
   EXPECT_EQ(base.Connect(fake), hal::Status::kOk);
   return fake;
 }
 }  // namespace
 
-TEST(MobileBaseDriver, NotConnectedIsSurfaced) {
-  MobileBase base({});
+TEST(MobileBaseCanClient, NotConnectedIsSurfaced) {
+  MobileBaseCanClient base({});
   EXPECT_EQ(base.SetTwist(0.5, 0, 0), hal::Status::kNotConnected);
   EXPECT_EQ(base.ReadStatus().status, hal::Status::kNotConnected);
 }
 
-TEST(MobileBaseDriver, SetTwistEncodesAndCountsUp) {
-  MobileBase base({});
+TEST(MobileBaseCanClient, SetTwistEncodesAndCountsUp) {
+  MobileBaseCanClient base({});
   auto fake = Connected(base);
   EXPECT_EQ(base.SetTwist(0.5, -0.2, 1.0), hal::Status::kOk);
   EXPECT_EQ(base.SetTwist(0.4, 0.0, -0.3), hal::Status::kOk);
@@ -72,8 +72,8 @@ TEST(MobileBaseDriver, SetTwistEncodesAndCountsUp) {
   EXPECT_EQ(static_cast<int>(b->counter), static_cast<int>(a->counter) + 1);
 }
 
-TEST(MobileBaseDriver, ClearEStopSendsKey) {
-  MobileBase base({});
+TEST(MobileBaseCanClient, ClearEStopSendsKey) {
+  MobileBaseCanClient base({});
   auto fake = Connected(base);
   EXPECT_EQ(base.ClearEStop(), hal::Status::kOk);
   ASSERT_EQ(fake->sent_.size(), 1u);
@@ -83,8 +83,8 @@ TEST(MobileBaseDriver, ClearEStopSendsKey) {
   EXPECT_EQ(c->key, kEStopClearKey);
 }
 
-TEST(MobileBaseDriver, RxDecodesIntoFreshSnapshot) {
-  MobileBase base({});
+TEST(MobileBaseCanClient, RxDecodesIntoFreshSnapshot) {
+  MobileBaseCanClient base({});
   auto fake = Connected(base);
   // Connected but no frame yet -> stale, not a false zero.
   EXPECT_EQ(base.ReadOdomTwist().status, hal::Status::kTimeout);
@@ -96,8 +96,8 @@ TEST(MobileBaseDriver, RxDecodesIntoFreshSnapshot) {
   EXPECT_NEAR(r.value.wz, 0.8, 1e-3);
 }
 
-TEST(MobileBaseDriver, CorruptedRxIsNotAccepted) {
-  MobileBase base({});
+TEST(MobileBaseCanClient, CorruptedRxIsNotAccepted) {
+  MobileBaseCanClient base({});
   auto fake = Connected(base);
   CanFrame f = Encode(StatusState{});
   f.data[2] ^= 0x01;  // break CRC
@@ -105,8 +105,8 @@ TEST(MobileBaseDriver, CorruptedRxIsNotAccepted) {
   EXPECT_EQ(base.ReadStatus().status, hal::Status::kTimeout);  // never marked fresh
 }
 
-TEST(MobileBaseDriver, ModelFrameHookReceivesExtensionFrames) {
-  MobileBase base({});
+TEST(MobileBaseCanClient, ModelFrameHookReceivesExtensionFrames) {
+  MobileBaseCanClient base({});
   int hits = 0;
   std::uint32_t seen_id = 0;
   base.SetModelFrameCallback([&](const CanFrame& f) {
@@ -120,4 +120,18 @@ TEST(MobileBaseDriver, ModelFrameHookReceivesExtensionFrames) {
   // A core frame does NOT go to the model hook.
   fake->Deliver(Encode(StatusState{}));
   EXPECT_EQ(hits, 1);
+}
+
+// The client is usable purely through the abstract MobileBase — the type an
+// upper layer (navigation) actually depends on. This is the whole point of the
+// interface extraction: a base is swapped by swapping the implementation.
+TEST(MobileBaseCanClient, UsableThroughAbstractInterface) {
+  MobileBaseCanClient client({});
+  auto fake = Connected(client);
+  MobileBase& base = client;  // erase the concrete type
+  EXPECT_EQ(base.SetTwist(0.3, 0.0, 0.1), hal::Status::kOk);
+  ASSERT_EQ(fake->sent_.size(), 1u);
+  EXPECT_TRUE(DecodeTwist(fake->sent_[0]).has_value());
+  fake->Deliver(Encode(OdomTwistState{0.3, 0.0, 0.1, 1}));
+  EXPECT_TRUE(base.ReadOdomTwist().ok());
 }

@@ -20,8 +20,8 @@
 #include <cstdint>
 #include <optional>
 
-#include "mobile_base/codec_util.hpp"
-#include "mobile_base/core.hpp"
+#include "mobile_base_can/codec_util.hpp"
+#include "mobile_base_can/core.hpp"
 
 namespace xmotion::mobile_base::profiles::swerve_v1 {
 

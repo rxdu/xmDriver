@@ -24,7 +24,7 @@
 #include <chrono>
 #include <cstdint>
 
-#include "mobile_base/core_codec.hpp"
+#include "mobile_base_can/core_codec.hpp"
 
 namespace xmotion::mobile_base {
 

@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/e2e.hpp"
+#include "mobile_base_can/e2e.hpp"
 
 #include <gtest/gtest.h>
 

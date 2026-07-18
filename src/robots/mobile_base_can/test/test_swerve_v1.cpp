@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/profiles/swerve_v1.hpp"
+#include "mobile_base_can/profiles/swerve_v1.hpp"
 
 #include <gtest/gtest.h>
 

@@ -1,9 +1,10 @@
 /*
- * core.hpp — Core Mobile-Base Profile constants: ids, ranges, scales, enums,
- * flag/fault bits (spec §3, §5, §7, §10). This is the STABLE framework — it
- * knows nothing about any model profile. Adding a model profile requires no
- * change here: a platform picks an id from the reserved extension ranges below
- * and a profile id for STATE_CAPABILITIES; the core never switches on it.
+ * core.hpp — Core Mobile-Base Profile CAN mapping: frame ids, extension ranges,
+ * and scale factors (spec §3, §5). This is the CAN-specific half of the Core
+ * Profile; the transport-neutral vocabulary (enums, frame structs, capability /
+ * fault bits) lives in `mobile_base/types.hpp`. Adding a model profile requires
+ * no change here — a platform picks an id from the reserved extension ranges and
+ * the core never switches on it.
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +15,6 @@
 #include <cstdint>
 
 namespace xmotion::mobile_base {
-
-// Protocol version byte (on the wire). Equals the spec major version.
-inline constexpr std::uint8_t kProtocolVersion = 1;
 
 // ---- CanFrame id map (spec §3). Lower id = higher bus priority. ---------------
 // Core commands
@@ -58,41 +56,6 @@ inline constexpr double kPoseScale = 10000.0;   // m     -> 0.1 mm   (i16)
 inline constexpr double kThetaScale = 10000.0;  // rad   -> 0.1 mrad (i16)
 inline constexpr double kVoltScale = 100.0;     // V     -> 10 mV    (u16)
 inline constexpr double kAmpScale = 100.0;      // A     -> 10 mA    (i16)
-
-// ---- Enumerations ----------------------------------------------------------
-enum class ModeRequest : std::uint8_t { kStandby = 0, kAuto = 1 };
-enum class ReportedMode : std::uint8_t {
-  kStandby = 0, kManual = 1, kAuto = 2, kEStop = 3
-};
-enum class EStopAction : std::uint8_t { kEngage = 1, kClear = 2 };
-enum class BaseType : std::uint8_t {
-  kDiff = 0, kAckermann = 1, kOmni = 2, kMecanum = 3, kSwerve = 4, kCustom = 255
-};
-
-inline constexpr std::uint16_t kEStopClearKey = 0xC1EA;
-
-// ---- STATE_STATUS flags (spec §7.1) ---------------------------------------
-inline constexpr std::uint8_t kFlagEStopLatched = 1u << 0;
-inline constexpr std::uint8_t kFlagCanFresh = 1u << 1;
-inline constexpr std::uint8_t kFlagRcLinkOk = 1u << 2;
-inline constexpr std::uint8_t kFlagFailsafeActive = 1u << 3;
-inline constexpr std::uint8_t kFlagBusDegraded = 1u << 4;
-
-// ---- STATE_CAPABILITIES dof_mask bits (spec §7.4) -------------------------
-inline constexpr std::uint8_t kDofVx = 1u << 0;
-inline constexpr std::uint8_t kDofVy = 1u << 1;
-inline constexpr std::uint8_t kDofWz = 1u << 2;
-
-// ---- Fault word bits (spec §10) -------------------------------------------
-inline constexpr std::uint32_t kFaultCanTimeout = 1u << 0;
-inline constexpr std::uint32_t kFaultProtoVersion = 1u << 1;
-inline constexpr std::uint32_t kFaultMalformedFrame = 1u << 2;
-inline constexpr std::uint32_t kFaultRcLinkLost = 1u << 3;
-inline constexpr std::uint32_t kFaultActuatorCommand = 1u << 4;
-inline constexpr std::uint32_t kFaultActuatorRead = 1u << 5;
-inline constexpr std::uint32_t kFaultEStop = 1u << 6;
-inline constexpr std::uint32_t kFaultCanBusoff = 1u << 7;
-inline constexpr std::uint32_t kFaultCmdIntegrity = 1u << 8;
 
 }  // namespace xmotion::mobile_base
 

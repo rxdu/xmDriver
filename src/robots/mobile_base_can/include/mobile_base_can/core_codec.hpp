@@ -16,39 +16,15 @@
 #include <cstdint>
 #include <optional>
 
-#include "mobile_base/codec_util.hpp"
-#include "mobile_base/core.hpp"
+#include "mobile_base/types.hpp"  // frame structs, enums (the shared vocabulary)
+#include "mobile_base_can/codec_util.hpp"
+#include "mobile_base_can/core.hpp"
 
 namespace xmotion::mobile_base {
 
-// ---- command frame types (commander -> base) -------------------------------
-struct TwistCommand { double vx = 0, vy = 0, wz = 0; std::uint8_t counter = 0; };
-struct ModeCommand { ModeRequest mode = ModeRequest::kStandby; std::uint8_t counter = 0; };
-struct EStopCommand { EStopAction action = EStopAction::kEngage; std::uint16_t key = 0; std::uint8_t counter = 0; };
-struct HeartbeatCommand { std::uint8_t version = kProtocolVersion; std::uint8_t counter = 0; };
-
-// ---- state frame types (base -> commander) ---------------------------------
-struct StatusState {
-  std::uint8_t version = kProtocolVersion;
-  ReportedMode mode = ReportedMode::kStandby;
-  std::uint8_t flags = 0;
-  std::uint16_t faults = 0;
-  std::uint8_t counter = 0;
-};
-struct OdomTwistState { double vx = 0, vy = 0, wz = 0; std::uint8_t counter = 0; };
-struct OdomPoseState { double dx = 0, dy = 0, dtheta = 0; std::uint8_t counter = 0; };
-struct CapabilitiesState {
-  std::uint8_t version = kProtocolVersion;
-  BaseType base_type = BaseType::kCustom;
-  std::uint8_t dof_mask = 0;
-  std::uint8_t wheel_count = 0;
-  std::uint8_t model_profile_id = 0;
-  std::uint8_t model_profile_ver = 0;
-  std::uint8_t counter = 0;
-};
-struct LimitsState { double max_vx = 0, max_vy = 0, max_wz = 0; std::uint8_t counter = 0; };
-struct BatteryState { double voltage = 0, current = 0; std::uint8_t soc = 0xFF; std::uint8_t counter = 0; };
-struct FaultState { std::uint32_t faults = 0; std::uint8_t last_fault = 0xFF; std::uint8_t counter = 0; };
+// Frame structs and enums are the transport-neutral vocabulary (types.hpp); this
+// header is only the CAN mapping — Encode() packs + stamps the E2E trailer,
+// Decode*() enforces shape + CRC before unpacking.
 
 // ---- encode ----------------------------------------------------------------
 inline CanFrame Encode(const TwistCommand& c) {

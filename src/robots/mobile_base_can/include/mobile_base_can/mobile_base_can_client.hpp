@@ -15,8 +15,8 @@
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef XMOTION_MOBILE_BASE_DRIVER_HPP
-#define XMOTION_MOBILE_BASE_DRIVER_HPP
+#ifndef XMOTION_MOBILE_BASE_CAN_CLIENT_HPP
+#define XMOTION_MOBILE_BASE_CAN_CLIENT_HPP
 
 #include <atomic>
 #include <chrono>
@@ -26,16 +26,18 @@
 #include <mutex>
 #include <string>
 
-#include "xmdriver/hal/device.hpp"
 #include "xmdriver/hal/freshness.hpp"
-#include "xmdriver/hal/result.hpp"
 #include "xmdriver/transport/can_interface.hpp"
 
-#include "mobile_base/core_codec.hpp"
+#include "mobile_base/mobile_base.hpp"       // the contract it implements
+#include "mobile_base_can/core_codec.hpp"    // the CAN codec it drives
 
 namespace xmotion {
 
-class MobileBase : public hal::Device {
+// Realizes the abstract MobileBase by serializing the Core Profile over CAN to a
+// firmware base (the mobile_base CAN protocol). See mobile_base.hpp for the
+// contract; frames are encoded/decoded via core_codec and the E2E trailer.
+class MobileBaseCanClient : public MobileBase {
  public:
   struct Config {
     std::string can_interface = "can0";
@@ -45,11 +47,11 @@ class MobileBase : public hal::Device {
     std::chrono::milliseconds state_timeout{200};
   };
 
-  explicit MobileBase(Config config);
-  ~MobileBase() override;
+  explicit MobileBaseCanClient(Config config);
+  ~MobileBaseCanClient() override;
 
-  MobileBase(const MobileBase&) = delete;
-  MobileBase& operator=(const MobileBase&) = delete;
+  MobileBaseCanClient(const MobileBaseCanClient&) = delete;
+  MobileBaseCanClient& operator=(const MobileBaseCanClient&) = delete;
 
   // hal::Device — opens Config.can_interface and wires the RX path.
   hal::Status Connect() override;
@@ -61,21 +63,21 @@ class MobileBase : public hal::Device {
   // mirroring the VESC driver. Takes ownership of `can`.
   hal::Status Connect(std::shared_ptr<CanInterface> can);
 
-  // ---- commands (commander -> base) ---------------------------------------
-  hal::Status SetTwist(double vx, double vy, double wz);
-  hal::Status SetMode(mobile_base::ModeRequest mode);
-  hal::Status EngageEStop();
-  hal::Status ClearEStop();  // sends the clear key (spec §6.3)
-  hal::Status SendHeartbeat();
+  // ---- commands (MobileBase overrides) ------------------------------------
+  hal::Status SetTwist(double vx, double vy, double wz) override;
+  hal::Status SetMode(mobile_base::ModeRequest mode) override;
+  hal::Status EngageEStop() override;
+  hal::Status ClearEStop() override;  // sends the clear key (spec §6.3)
+  hal::Status SendHeartbeat();  // client extra: wire liveness, not in the contract
 
-  // ---- state reads (base -> commander); kTimeout if never seen or stale ----
-  hal::Result<mobile_base::StatusState> ReadStatus() const;
-  hal::Result<mobile_base::OdomTwistState> ReadOdomTwist() const;
-  hal::Result<mobile_base::OdomPoseState> ReadOdomPose() const;
-  hal::Result<mobile_base::CapabilitiesState> ReadCapabilities() const;
-  hal::Result<mobile_base::LimitsState> ReadLimits() const;
-  hal::Result<mobile_base::BatteryState> ReadBattery() const;
-  hal::Result<mobile_base::FaultState> ReadFaults() const;
+  // ---- state reads (MobileBase overrides); kTimeout if never seen or stale --
+  hal::Result<mobile_base::StatusState> ReadStatus() const override;
+  hal::Result<mobile_base::OdomTwistState> ReadOdomTwist() const override;
+  hal::Result<mobile_base::OdomPoseState> ReadOdomPose() const override;
+  hal::Result<mobile_base::CapabilitiesState> ReadCapabilities() const override;
+  hal::Result<mobile_base::LimitsState> ReadLimits() const override;
+  hal::Result<mobile_base::BatteryState> ReadBattery() const override;
+  hal::Result<mobile_base::FaultState> ReadFaults() const override;
 
   // Model-profile extension frames (STATE_MODULE, ...) delivered verbatim for a
   // profile decoder. Fires on the I/O thread — keep the handler short and
@@ -127,4 +129,4 @@ class MobileBase : public hal::Device {
 
 }  // namespace xmotion
 
-#endif  // XMOTION_MOBILE_BASE_DRIVER_HPP
+#endif  // XMOTION_MOBILE_BASE_CAN_CLIENT_HPP
