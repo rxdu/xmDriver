@@ -1,9 +1,9 @@
 /*
- * mobile_base_driver.cpp — commander-side driver implementation (spec §6-§9).
+ * mobile_base_can_client.cpp — MobileBaseCanClient implementation (spec §6-§9).
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/mobile_base_driver.hpp"
+#include "mobile_base/mobile_base_can_client.hpp"
 
 #include <utility>
 
@@ -13,7 +13,7 @@ namespace xmotion {
 
 using namespace mobile_base;  // protocol names; hal:: stays qualified
 
-MobileBase::MobileBase(Config config)
+MobileBaseCanClient::MobileBaseCanClient(Config config)
     : cfg_(std::move(config)),
       status_fresh_(cfg_.state_timeout),
       odom_twist_fresh_(cfg_.state_timeout),
@@ -23,13 +23,13 @@ MobileBase::MobileBase(Config config)
       battery_fresh_(cfg_.state_timeout),
       faults_fresh_(cfg_.state_timeout) {}
 
-MobileBase::~MobileBase() { Disconnect(); }
+MobileBaseCanClient::~MobileBaseCanClient() { Disconnect(); }
 
-hal::Status MobileBase::Connect() {
+hal::Status MobileBaseCanClient::Connect() {
   return Connect(std::make_shared<AsyncCAN>(cfg_.can_interface));
 }
 
-hal::Status MobileBase::Connect(std::shared_ptr<CanInterface> can) {
+hal::Status MobileBaseCanClient::Connect(std::shared_ptr<CanInterface> can) {
   if (!can) return hal::Status::kInvalidArgument;
   can_ = std::move(can);
   can_->SetReceiveCallback([this](const CanFrame& f) { OnFrame(f); });
@@ -42,7 +42,7 @@ hal::Status MobileBase::Connect(std::shared_ptr<CanInterface> can) {
   return hal::Status::kOk;
 }
 
-void MobileBase::Disconnect() {
+void MobileBaseCanClient::Disconnect() {
   connected_.store(false);
   if (can_) {
     can_->Close();
@@ -58,9 +58,9 @@ void MobileBase::Disconnect() {
   faults_fresh_.Reset();
 }
 
-bool MobileBase::IsConnected() const { return connected_.load(); }
+bool MobileBaseCanClient::IsConnected() const { return connected_.load(); }
 
-hal::DeviceHealth MobileBase::Health() const {
+hal::DeviceHealth MobileBaseCanClient::Health() const {
   const bool conn = connected_.load();
   std::lock_guard<std::mutex> lk(state_mtx_);
   hal::DeviceHealth h = hal::HealthFromFreshness(conn, status_fresh_);
@@ -82,50 +82,50 @@ hal::DeviceHealth MobileBase::Health() const {
 }
 
 // ---- commands --------------------------------------------------------------
-hal::Status MobileBase::SetTwist(double vx, double vy, double wz) {
+hal::Status MobileBaseCanClient::SetTwist(double vx, double vy, double wz) {
   return Send(Encode(TwistCommand{vx, vy, wz, twist_ctr_.fetch_add(1)}));
 }
-hal::Status MobileBase::SetMode(ModeRequest mode) {
+hal::Status MobileBaseCanClient::SetMode(ModeRequest mode) {
   return Send(Encode(ModeCommand{mode, mode_ctr_.fetch_add(1)}));
 }
-hal::Status MobileBase::EngageEStop() {
+hal::Status MobileBaseCanClient::EngageEStop() {
   return Send(
       Encode(EStopCommand{EStopAction::kEngage, 0, estop_ctr_.fetch_add(1)}));
 }
-hal::Status MobileBase::ClearEStop() {
+hal::Status MobileBaseCanClient::ClearEStop() {
   return Send(Encode(EStopCommand{EStopAction::kClear, kEStopClearKey,
                                   estop_ctr_.fetch_add(1)}));
 }
-hal::Status MobileBase::SendHeartbeat() {
+hal::Status MobileBaseCanClient::SendHeartbeat() {
   return Send(
       Encode(HeartbeatCommand{cfg_.protocol_version, hb_ctr_.fetch_add(1)}));
 }
 
 // ---- state reads -----------------------------------------------------------
-hal::Result<StatusState> MobileBase::ReadStatus() const {
+hal::Result<StatusState> MobileBaseCanClient::ReadStatus() const {
   return Read(status_, status_fresh_);
 }
-hal::Result<OdomTwistState> MobileBase::ReadOdomTwist() const {
+hal::Result<OdomTwistState> MobileBaseCanClient::ReadOdomTwist() const {
   return Read(odom_twist_, odom_twist_fresh_);
 }
-hal::Result<OdomPoseState> MobileBase::ReadOdomPose() const {
+hal::Result<OdomPoseState> MobileBaseCanClient::ReadOdomPose() const {
   return Read(odom_pose_, odom_pose_fresh_);
 }
-hal::Result<CapabilitiesState> MobileBase::ReadCapabilities() const {
+hal::Result<CapabilitiesState> MobileBaseCanClient::ReadCapabilities() const {
   return Read(caps_, caps_fresh_);
 }
-hal::Result<LimitsState> MobileBase::ReadLimits() const {
+hal::Result<LimitsState> MobileBaseCanClient::ReadLimits() const {
   return Read(limits_, limits_fresh_);
 }
-hal::Result<BatteryState> MobileBase::ReadBattery() const {
+hal::Result<BatteryState> MobileBaseCanClient::ReadBattery() const {
   return Read(battery_, battery_fresh_);
 }
-hal::Result<FaultState> MobileBase::ReadFaults() const {
+hal::Result<FaultState> MobileBaseCanClient::ReadFaults() const {
   return Read(faults_, faults_fresh_);
 }
 
 // ---- internals -------------------------------------------------------------
-hal::Status MobileBase::Send(const CanFrame& f) {
+hal::Status MobileBaseCanClient::Send(const CanFrame& f) {
   if (!can_ || !connected_.load()) return hal::Status::kNotConnected;
   switch (can_->SendFrame(f)) {
     case TransportStatus::kOk:
@@ -141,7 +141,7 @@ hal::Status MobileBase::Send(const CanFrame& f) {
   return hal::Status::kIoError;
 }
 
-void MobileBase::OnFrame(const CanFrame& f) {
+void MobileBaseCanClient::OnFrame(const CanFrame& f) {
   switch (f.id) {
     case kStateStatus:
       if (auto s = DecodeStatus(f)) Store(status_, *s, status_fresh_);

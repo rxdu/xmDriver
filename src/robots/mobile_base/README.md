@@ -7,14 +7,21 @@ This is a self-authored *device protocol*, sitting under `src/robots/` alongside
 - **Normative spec:** [`docs/can_protocol.md`](docs/can_protocol.md) (frozen v1.0.0)
 - **Machine-readable dictionary:** [`docs/mobile_base.dbc`](docs/mobile_base.dbc) (CANalyzer / SavvyCAN / codegen)
 
-## Two targets, by dependency weight
+## Abstraction & targets
+
+Navigation depends on the **abstract `MobileBase`** interface ([`mobile_base.hpp`](include/mobile_base/mobile_base.hpp)) — body twist in, odometry + capabilities out — never on a robot's protocol or wiring. Each robot provides an implementation, so adding a base is a new class, not a framework change. The frozen Core Profile *is* that contract, whether it crosses CAN to a firmware base or is realized in-host.
 
 | Target | Kind | Depends on | Who links it |
 |---|---|---|---|
-| `xmotion::mobile_base` | header-only | `transport_interface` (just `CanFrame`) | the **base** side, or any embedded/MCU consumer — no asio |
-| `xmotion::mobile_base_driver` | static lib | `mobile_base`, `hal`, `async_port` | the **commander** (autonomy) — opens a real CAN bus |
+| `xmotion::mobile_base` | header-only | `transport_interface` (just `CanFrame`) | the **base** side / any embedded/MCU consumer — no hal, no asio |
+| `xmotion::mobile_base_interface` | header-only | `mobile_base`, `hal` | **navigation** — depends on the abstract `MobileBase` only |
+| `xmotion::mobile_base_can_client` | static lib | `mobile_base_interface`, `async_port` | the **commander** — `MobileBaseCanClient`, opens a real CAN bus |
 
-Keeping the codec header-only and asio-free means the base can share the exact same encode/decode/E2E code as the commander without inheriting the transport stack.
+The codec stays header-only and hal/asio-free so the base (or an MCU) shares the exact encode/decode/E2E code; the interface adds `hal::Device` without the transport stack; only the client pulls asio.
+
+Implementations of `MobileBase`:
+- **`MobileBaseCanClient`** (here) — serializes the Core Profile over CAN to a firmware base (e.g. swervebot).
+- a **host-composed** base (planned) — e.g. an Ackermann RC car mapping twist → a bicycle model → VESC + steering servo, no wire protocol.
 
 ## Integrity (E2E, spec §4)
 
@@ -23,10 +30,10 @@ Every frame carries a uniform trailer: **byte 6 = alive counter, byte 7 = CRC-8/
 ## Commander side
 
 ```cpp
-#include "mobile_base/mobile_base_driver.hpp"
+#include "mobile_base/mobile_base_can_client.hpp"
 using namespace xmotion;
 
-MobileBase base({.can_interface = "can0"});
+MobileBaseCanClient base({.can_interface = "can0"});
 if (base.Connect() != hal::Status::kOk) { /* handle */ }
 
 base.SetMode(mobile_base::ModeRequest::kAuto);
@@ -38,7 +45,7 @@ if (auto odom = base.ReadOdomTwist(); odom.ok())      // kTimeout if base went s
 base.EngageEStop();                                   // ClearEStop() re-arms with the key
 ```
 
-Reads return `hal::Result<T>` — a silent (disconnected or stalled) base yields `kTimeout`, never a stale value read back as fresh. Model-profile frames are delivered verbatim via `SetModelFrameCallback` so a profile layer decodes them; the driver stays model-agnostic.
+Navigation holds it as the abstract `MobileBase&` and never sees the CAN specifics. Reads return `hal::Result<T>` — a silent (disconnected or stalled) base yields `kTimeout`, never a stale value read back as fresh. Model-profile frames are delivered verbatim via `MobileBaseCanClient::SetModelFrameCallback` (a client extra, outside the abstract contract) so a profile layer decodes them.
 
 ## Base side
 

@@ -8,11 +8,11 @@ foreach (t e2e core_codec command_tracker swerve_v1)
   add_test(NAME robots::mobile_base_${t} COMMAND test_mobile_base_${t})
 endforeach ()
 
-# Commander-side driver test — links the STATIC mobile_base_driver (+ async_port).
-add_executable(test_mobile_base_driver test_mobile_base_driver.cpp)
-target_link_libraries(test_mobile_base_driver PRIVATE mobile_base_driver gtest gtest_main)
-gtest_discover_tests(test_mobile_base_driver)
-add_test(NAME robots::mobile_base_driver COMMAND test_mobile_base_driver)
+# CAN client test — links the STATIC mobile_base_can_client (+ async_port).
+add_executable(test_mobile_base_can_client test_mobile_base_can_client.cpp)
+target_link_libraries(test_mobile_base_can_client PRIVATE mobile_base_can_client gtest gtest_main)
+gtest_discover_tests(test_mobile_base_can_client)
+add_test(NAME robots::mobile_base_can_client COMMAND test_mobile_base_can_client)
 
 # DBC sync test — needs the dictionary path baked in at compile time.
 add_executable(test_mobile_base_dbc_sync test_dbc_sync.cpp)
