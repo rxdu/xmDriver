@@ -33,7 +33,7 @@ xmdriver_add_group(transport transport_interface async_port modbus_rtu)
 xmdriver_add_group(motors    motor_akelc motor_vesc motor_waveshare motor_registry)
 xmdriver_add_group(sensors   sensor_imu)
 xmdriver_add_group(input     input_hid input_sbus)
-xmdriver_add_group(robots    mobile_base)
+xmdriver_add_group(robots    mobile_base mobile_base_driver)
 
 ## Aggregate everything: consumers link a single xmotion::xmDriver.
 add_library(xmDriver INTERFACE)
