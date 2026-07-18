@@ -53,6 +53,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -76,6 +77,11 @@ class Ddsm210Array final : public hal::Motor {
     std::string bus;                // serial device, e.g. "/dev/ttyUSB0"
     std::vector<std::uint8_t> ids;  // motor ids; order defines batch order
     double max_speed_rpm = 0.0;     // shared |RPM| envelope; <=0 => 210
+    // How long a per-id feedback sample stays "fresh" before GetSpeed()/
+    // GetState() report kTimeout. Widen it when several motors share the
+    // half-duplex bus and feedback is polled round-robin, so an occasional
+    // dropped reply between a motor's polls is tolerated.
+    std::chrono::milliseconds feedback_timeout{200};
   };
 
   // Latest per-id feedback snapshot (last successfully decoded values).
@@ -163,7 +169,7 @@ class Ddsm210Array final : public hal::Motor {
 
  private:
   struct Channel {
-    explicit Channel(std::uint8_t motor_id);
+    Channel(std::uint8_t motor_id, std::chrono::milliseconds freshness_timeout);
     std::uint8_t id;
     Ddsm210Frame::RawFeedback fb;  // guarded by snap_mtx_
     hal::FreshnessMonitor freshness;
