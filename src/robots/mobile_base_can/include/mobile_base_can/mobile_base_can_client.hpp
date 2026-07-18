@@ -29,13 +29,14 @@
 #include "xmdriver/hal/freshness.hpp"
 #include "xmdriver/transport/can_interface.hpp"
 
-#include "mobile_base/mobile_base.hpp"
+#include "mobile_base/mobile_base.hpp"       // the contract it implements
+#include "mobile_base_can/core_codec.hpp"    // the CAN codec it drives
 
 namespace xmotion {
 
 // Realizes the abstract MobileBase by serializing the Core Profile over CAN to a
 // firmware base (the mobile_base CAN protocol). See mobile_base.hpp for the
-// contract and mobile_base_driver's original doc for the thread model.
+// contract; frames are encoded/decoded via core_codec and the E2E trailer.
 class MobileBaseCanClient : public MobileBase {
  public:
   struct Config {

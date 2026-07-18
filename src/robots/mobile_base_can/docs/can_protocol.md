@@ -3,8 +3,8 @@
 - **Spec version: 1.0.0** — frozen. Changes after this follow the versioning rules of §1.4.
 - **Protocol version byte: 1** — carried on the wire; equals the spec major version.
 - **Core Profile: Mobile Base v1.** **Model Profiles:** Swerve Module v1 (§8.1).
-- Home: `xmDriver` — `src/robots/mobile_base/`. A mobile base implements this interface; the upper-tier CAN device driver (`hal::MobileBase`, same module) consumes it. Any XMotion base reuses it by vendoring xmDriver.
-- Reference implementation: `include/mobile_base/` — `core_codec.hpp` (frame types + codec), `e2e.hpp` (integrity), `command_tracker.hpp` (base-side gates), model profiles under `profiles/`. Machine-readable dictionary: `docs/mobile_base.dbc` (§13). Conformance tests: `test/` — `test_e2e.cpp`, `test_core_codec.cpp`, `test_command_tracker.cpp`, `test_swerve_v1.cpp`.
+- Home: **xmDriver** — CAN realization at `src/robots/mobile_base_can/`; the abstract contract (`xmotion::MobileBase` + SI vocabulary) at the sibling `src/robots/mobile_base/`. A base implements the contract; the commander-side `MobileBaseCanClient` speaks this wire protocol. Any XMotion base reuses it by vendoring xmDriver.
+- Reference implementation: `include/mobile_base_can/` — `core_codec.hpp` (codec), `e2e.hpp` (integrity), `command_tracker.hpp` (base-side gates), model profiles under `profiles/`; the SI vocabulary is `../mobile_base/include/mobile_base/types.hpp`. Machine-readable dictionary: `docs/mobile_base.dbc` (§13). Conformance tests: `test/`.
 
 The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, MAY are to be interpreted as in RFC 2119.
 

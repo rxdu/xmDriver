@@ -15,7 +15,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "mobile_base/e2e.hpp"
+#include "mobile_base_can/e2e.hpp"
 #include "xmdriver/transport/can_frame.hpp"
 
 namespace xmotion::mobile_base {

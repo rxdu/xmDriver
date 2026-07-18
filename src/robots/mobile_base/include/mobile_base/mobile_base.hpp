@@ -28,7 +28,7 @@
 #include "xmdriver/hal/device.hpp"
 #include "xmdriver/hal/result.hpp"
 
-#include "mobile_base/core_codec.hpp"
+#include "mobile_base/types.hpp"
 
 namespace xmotion {
 

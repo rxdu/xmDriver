@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/core_codec.hpp"
+#include "mobile_base_can/core_codec.hpp"
 
 #include <cmath>
 #include <limits>

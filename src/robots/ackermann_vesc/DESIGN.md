@@ -33,7 +33,7 @@ wire). It's the concrete answer to "robots can use the device abstractions."
 One `xmotion::VescMotor` (from `motor_vesc`). The VESC already exposes both
 outputs on CAN — `SetSpeed`/`SetCurrent` for the drive motor and `SetServo` for
 the steering servo on its servo output — so the whole base is one device. No
-separate servo driver needed. Depends on `mobile_base_interface` (the contract +
+separate servo driver needed. Depends on `mobile_base` (the contract +
 Core Profile types) and `motor_vesc`.
 
 ## Kinematics (rear-axle bicycle model), wheelbase `L`
@@ -97,7 +97,7 @@ src/robots/ackermann_vesc/
   src/ackermann_vesc_base.cpp
   test/test_ackermann_vesc_base.cpp                fake VescMotor: assert servo+speed vs bicycle
                                                    model; feed ERPM → assert odometry integration
-  CMakeLists.txt                                   deps: mobile_base_interface, motor_vesc
+  CMakeLists.txt                                   deps: mobile_base, motor_vesc
 ```
 
 ## Testing (hardware-free)

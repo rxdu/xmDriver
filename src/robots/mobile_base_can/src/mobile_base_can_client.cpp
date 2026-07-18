@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/mobile_base_can_client.hpp"
+#include "mobile_base_can/mobile_base_can_client.hpp"
 
 #include <utility>
 

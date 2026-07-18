@@ -5,15 +5,15 @@
  *
  * Copyright (c) 2026 Ruixiang Du (rdu). SPDX-License-Identifier: Apache-2.0
  */
-#include "mobile_base/mobile_base_can_client.hpp"
+#include "mobile_base_can/mobile_base_can_client.hpp"
 
 #include <memory>
 #include <vector>
 
 #include <gtest/gtest.h>
 
-#include "mobile_base/core_codec.hpp"
-#include "mobile_base/profiles/swerve_v1.hpp"
+#include "mobile_base_can/core_codec.hpp"
+#include "mobile_base_can/profiles/swerve_v1.hpp"
 
 using namespace xmotion;
 using namespace xmotion::mobile_base;

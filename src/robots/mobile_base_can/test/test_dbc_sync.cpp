@@ -18,8 +18,8 @@
 
 #include <gtest/gtest.h>
 
-#include "mobile_base/core.hpp"
-#include "mobile_base/profiles/swerve_v1.hpp"
+#include "mobile_base_can/core.hpp"
+#include "mobile_base_can/profiles/swerve_v1.hpp"
 
 using namespace xmotion::mobile_base;
 namespace sw = xmotion::mobile_base::profiles::swerve_v1;

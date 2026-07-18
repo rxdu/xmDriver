@@ -3,7 +3,7 @@
 # swerve reference profile.
 foreach (t e2e core_codec command_tracker swerve_v1)
   add_executable(test_mobile_base_${t} test_${t}.cpp)
-  target_link_libraries(test_mobile_base_${t} PRIVATE mobile_base gtest gtest_main)
+  target_link_libraries(test_mobile_base_${t} PRIVATE mobile_base_can gtest gtest_main)
   gtest_discover_tests(test_mobile_base_${t})
   add_test(NAME robots::mobile_base_${t} COMMAND test_mobile_base_${t})
 endforeach ()
@@ -16,7 +16,7 @@ add_test(NAME robots::mobile_base_can_client COMMAND test_mobile_base_can_client
 
 # DBC sync test — needs the dictionary path baked in at compile time.
 add_executable(test_mobile_base_dbc_sync test_dbc_sync.cpp)
-target_link_libraries(test_mobile_base_dbc_sync PRIVATE mobile_base gtest gtest_main)
+target_link_libraries(test_mobile_base_dbc_sync PRIVATE mobile_base_can gtest gtest_main)
 target_compile_definitions(test_mobile_base_dbc_sync PRIVATE
     MOBILE_BASE_DBC_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../docs/mobile_base.dbc")
 gtest_discover_tests(test_mobile_base_dbc_sync)
