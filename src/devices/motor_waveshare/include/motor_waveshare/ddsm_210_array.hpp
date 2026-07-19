@@ -172,7 +172,12 @@ class Ddsm210Array final : public hal::Motor {
     Channel(std::uint8_t motor_id, std::chrono::milliseconds freshness_timeout);
     std::uint8_t id;
     Ddsm210Frame::RawFeedback fb;  // guarded by snap_mtx_
-    hal::FreshnessMonitor freshness;
+    hal::FreshnessMonitor freshness;  // marked by ANY valid frame for this id
+    // Marked ONLY by a mode-request-feedback frame. The mode byte in `fb`
+    // defaults to 0 (== kOpenLoop), so without a dedicated freshness gate a
+    // dropped mode reply is indistinguishable from a genuine open-loop motor.
+    // GetMode() returns kUnknown until this reports a fresh sample.
+    hal::FreshnessMonitor mode_freshness;
   };
 
   Channel* FindChannel(std::uint8_t id) const;

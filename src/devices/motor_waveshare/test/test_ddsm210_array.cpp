@@ -384,7 +384,10 @@ TEST(Ddsm210ArrayTest, OdometryAndModeRequestsGoToTheRightId) {
   f[9] = serialization::crc8_maxim(f.data(), 9);
   fake->Deliver(f);
   EXPECT_EQ(m.GetMode(2), Ddsm210Array::Mode::kSpeed);
-  EXPECT_EQ(m.GetMode(1), Ddsm210Array::Mode::kOpenLoop);  // default 0
+  // id 1 received no mode-request feedback: kUnknown, NOT a false open-loop
+  // from the zero-default mode byte (GetMode is freshness-gated on the mode
+  // frame, so a dropped reply is distinguishable from a real open-loop motor).
+  EXPECT_EQ(m.GetMode(1), Ddsm210Array::Mode::kUnknown);
   EXPECT_EQ(m.GetMode(9), Ddsm210Array::Mode::kUnknown);   // unknown id
 }
 

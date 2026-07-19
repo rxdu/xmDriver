@@ -73,7 +73,9 @@ hal::Status Ddsm210Array::MemberRef::Stop() { return owner_->Stop(id_); }
 
 Ddsm210Array::Channel::Channel(std::uint8_t motor_id,
                                std::chrono::milliseconds freshness_timeout)
-    : id(motor_id), freshness(freshness_timeout) {}
+    : id(motor_id),
+      freshness(freshness_timeout),
+      mode_freshness(freshness_timeout) {}
 
 Ddsm210Array::Ddsm210Array(Config cfg) : Ddsm210Array(std::move(cfg), nullptr) {}
 
@@ -125,7 +127,10 @@ hal::Status Ddsm210Array::Connect() {
   // Reset per-connect state before the port opens (the RX callback owns
   // warned_unknown_id_ once data can flow).
   warned_unknown_id_ = false;
-  for (auto& ch : channels_) ch->freshness.Reset();
+  for (auto& ch : channels_) {
+    ch->freshness.Reset();
+    ch->mode_freshness.Reset();
+  }
 
   if (!serial_->Open() && !serial_->IsOpened()) {
     XM_ERROR_SRC(src_, "Ddsm210Array: failed to open serial '{}'", cfg_.bus);
@@ -142,7 +147,10 @@ void Ddsm210Array::Disconnect() {
   Stop();  // never leave any motor energized on the way out
   if (serial_) serial_->Close();
   connected_.store(false);
-  for (auto& ch : channels_) ch->freshness.Reset();
+  for (auto& ch : channels_) {
+    ch->freshness.Reset();
+    ch->mode_freshness.Reset();
+  }
   health_reporter_.Update(hal::DeviceHealth::State::kDisconnected);
   XM_INFO_SRC(src_, "Ddsm210Array: disconnected from '{}'", cfg_.bus);
 }
@@ -358,6 +366,12 @@ void Ddsm210Array::RequestModeFeedback(std::uint8_t id) {
 Ddsm210Array::Mode Ddsm210Array::GetMode(std::uint8_t id) const {
   const Channel* ch = FindChannel(id);
   if (ch == nullptr) return Mode::kUnknown;
+  // No fresh mode-request-feedback frame => we do NOT know the mode. Returning
+  // the raw byte here would report kOpenLoop (its zero default) on a dropped
+  // reply — a false "open-loop" for a motor that may be in speed mode. Callers
+  // that need the mode should RequestModeFeedback() and poll until this is
+  // no longer kUnknown (see Ddsm210::SetMode's confirmation loop).
+  if (!ch->mode_freshness.IsFresh()) return Mode::kUnknown;
   std::lock_guard<std::mutex> lk(snap_mtx_);
   return static_cast<Mode>(ch->fb.mode_request_feedback.mode);
 }
@@ -414,6 +428,7 @@ void Ddsm210Array::ProcessRx(uint8_t* data, size_t /*bufsize*/, size_t len) {
           break;
         case Ddsm210Frame::Type::kModeRequestFeedback:
           ch->fb.mode_request_feedback = raw.mode_request_feedback;
+          ch->mode_freshness.Mark();  // the only frame that carries the mode
           break;
         default:
           break;
